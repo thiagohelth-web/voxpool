@@ -50,6 +50,14 @@
         .adm-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
         .adm-row .form-group { flex: 1; min-width: 120px; margin-bottom: 0; }
 
+        /* TABELA DE MEMBROS */
+        .table-container { overflow-x: auto; margin-top: 10px; background: var(--bg-input); border-radius: 12px; border: 1px solid var(--border-color); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+        th, td { padding: 12px; border-bottom: 1px solid var(--border-color); }
+        th { background: rgba(255, 255, 255, 0.02); font-weight: 600; color: var(--text-muted); }
+        .btn-table-action { background: var(--accent-blue); border: none; color: white; padding: 6px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; }
+        .btn-table-action:hover { opacity: 0.9; }
+
         /* CONTEÚDO */
         main { max-width: 600px; width: 100%; margin: 0 auto; padding: 24px 16px; flex: 1; }
         .view-section { display: none; }
@@ -78,6 +86,7 @@
 </head>
 <body>
 
+    <!-- VISÃO 0: TELA DE LOGIN / CADASTRO -->
     <div id="view-auth" class="view-section active" style="display: flex; min-height: 100vh; width: 100%;">
         <div class="auth-container">
             <div class="auth-logo">Vox<span>Pool</span></div>
@@ -98,6 +107,7 @@
         </div>
     </div>
 
+    <!-- ESTRUTURA DO SITE PRINCIPAL -->
     <div id="app-conteudo" style="display: none; flex-direction: column; min-height: 100vh;">
         <nav>
             <div class="nav-container">
@@ -112,8 +122,10 @@
         </nav>
 
         <main>
+            <!-- ÁREA EXCLUSIVA DO ADMINISTRADOR (@admhelth) -->
             <div id="painel-adm" style="display: none;">
                 
+                <!-- Bloco 1: Validação de Tokens Rápidos -->
                 <div class="adm-box" style="border-color: rgba(16, 185, 129, 0.3);">
                     <div class="adm-section-title" style="color: var(--accent-green)">🛡️ 1. Aprovação por Token (WhatsApp)</div>
                     <div class="adm-validation-zone" style="display: flex; gap: 10px;">
@@ -122,6 +134,7 @@
                     </div>
                 </div>
 
+                <!-- Bloco 2: Criador / Editor de Enquetes Ativas -->
                 <div class="adm-box" style="border-color: rgba(59, 130, 246, 0.3);">
                     <div class="adm-section-title">📝 2. Publicar Nova Enquete Ativa</div>
                     <div class="form-group" style="margin-bottom: 10px;">
@@ -135,22 +148,50 @@
                     <button class="btn-action" style="margin-top: 12px; background: var(--accent-blue);" onclick="admAtualizarEnquete()">⚡ Inserir e Atualizar Enquete no Site</button>
                 </div>
 
-                <div class="adm-box" style="border-color: rgba(245, 158, 11, 0.3);">
-                    <div class="adm-section-title" style="color: #f59e0b;">⚙️ 3. Modificar Membro Manualmente por Código</div>
+                <!-- Bloco 3: Controle e Correção Manual de Membros por Código -->
+                <div class="adm-box" style="border-color: rgba(245, 158, 11, 0.3);" id="modulo-correcao-membro">
+                    <div class="adm-section-title" style="color: #f59e0b;">⚙️ 3. Modificar Membro Selecionado</div>
                     <div class="adm-row">
                         <div class="form-group" style="flex: 1.5;">
-                            <input type="text" id="adm-membro-codigo" class="form-control" placeholder="Código do Membro (Ex: M-1052)">
+                            <label style="font-size:11px; color:var(--text-muted);">ID do Usuário Selecionado</label>
+                            <input type="text" id="adm-membro-codigo" class="form-control" placeholder="Código (Ex: M-1052)">
                         </div>
                         <div class="form-group">
+                            <label style="font-size:11px; color:var(--text-muted);">Configurar Novo Saldo</label>
                             <input type="number" id="adm-membro-novo-saldo" class="form-control" placeholder="Novo Saldo">
                         </div>
                     </div>
-                    <button class="btn-action" style="margin-top: 12px; background: #d97706;" onclick="admAjustarMembroManual()">Ajustar Conta do Cliente</button>
+                    <button class="btn-action" style="margin-top: 12px; background: #d97706;" onclick="admAjustarMembroManual()">Salvar Atualizações do Cliente</button>
                 </div>
 
+                <!-- NOVO BLOCO 4: LISTA DE MEMBROS CADASTRADOS -->
+                <div class="adm-box" style="border-color: rgba(255, 255, 255, 0.15);">
+                    <div class="adm-section-title" style="color: #f3f4f6;">👥 4. Lista Completa de Membros Registrados</div>
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom: 8px;">Clique em "Gerenciar" para carregar os dados do membro no painel de correção acima.</p>
+                    
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Usuário</th>
+                                    <th>Código (ID)</th>
+                                    <th>Saldo</th>
+                                    <th>Pendente</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adm-tabela-membros-corpo">
+                                <!-- Preenchido dinamicamente via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Botão de Reset Absoluto -->
                 <button class="btn-nav" style="background: var(--accent-red); margin-bottom: 24px; width: 100%; border: none; font-weight: 700; padding: 14px;" onclick="admZerarTudo()">⚠️ ZERAR CRÉDITOS DE TODAS AS CONTAS E ENQUETES</button>
             </div>
 
+            <!-- VISÃO 1: ENQUETE -->
             <section id="view-enquetes" class="view-section">
                 <div class="titulo-secao">
                     <span>Enquete Ativa</span>
@@ -181,6 +222,7 @@
                 </div>
             </section>
 
+            <!-- VISÃO 2: LOJA -->
             <section id="view-loja" class="view-section">
                 <div class="titulo-secao">
                     <button class="btn-nav" onclick="navegarPara('view-enquetes')">← Voltar</button>
@@ -191,6 +233,7 @@
         </main>
     </div>
 
+    <!-- MODAL DE CHECKOUT PIX -->
     <div id="modal-pix" class="pix-modal">
         <div class="pix-modal-content">
             <h3 style="color: white; font-weight: 800;">Pagamento via Pix</h3>
@@ -221,7 +264,6 @@
         let usuarioLogado = null;
         let pacotePendente = null;
 
-        // Estrutura padrão inicial da enquete caso o banco esteja limpo
         const enquetePadrao = {
             pergunta: "Quem possui a maior torcida engajada e ativa no cenário nacional atual?",
             opt1: "BOLSONARO", opt2: "LULA", opt3: "NENHUM DELES"
@@ -265,7 +307,6 @@
             if(modoAuth === "CADASTRO") {
                 if(bancoUsuarios[loginInput]) { alert("Usuário já existe!"); return; }
                 
-                // Geração automática do código personalizado exclusivo baseado em carimbo de hora simplificado
                 const codigoGerado = `M-${Math.floor(1000 + Math.random() * 9000)}`;
                 
                 bancoUsuarios[loginInput] = { 
@@ -295,10 +336,16 @@
         function logarSucesso() {
             document.getElementById('view-auth').style.display = 'none';
             document.getElementById('app-conteudo').style.display = 'flex';
-            document.getElementById('painel-adm').style.display = usuarioLogado.role === "ADM" ? 'block' : 'none';
+            
+            const isAdm = usuarioLogado.role === "ADM";
+            document.getElementById('painel-adm').style.display = isAdm ? 'block' : 'none';
+            
+            if(isAdm) {
+                admAtualizarTabelaMembros();
+            }
             
             const badgeCod = document.getElementById('badge-codigo-membro');
-            if(usuarioLogado.role !== "ADM") {
+            if(!isAdm) {
                 badgeCod.innerText = `ID: ${usuarioLogado.codigo}`;
                 badgeCod.style.display = 'block';
                 
@@ -326,7 +373,48 @@
             document.getElementById('view-auth').style.display = 'flex';
         }
 
-        // ATUALIZAR E INSERIR NOVA ENQUETE VIA ADM
+        // RENDERIZAR DINAMICAMENTE A LISTA DE MEMBROS (EXCLUSIVO ADM)
+        function admAtualizarTabelaMembros() {
+            const corpoTabela = document.getElementById('adm-tabela-membros-corpo');
+            corpoTabela.innerHTML = '';
+            
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpool_usuarios') || "{}");
+            const chaves = Object.keys(bancoUsuarios);
+            
+            if(chaves.length === 0) {
+                corpoTabela.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Nenhum membro cadastrado até o momento.</td></tr>`;
+                return;
+            }
+
+            chaves.forEach(usuario => {
+                const dados = bancoUsuarios[usuario];
+                const cod = dados.codigo || 'Não definido';
+                const sal = dados.saldo || 0;
+                const pend = dados.pendente || 0;
+
+                corpoTabela.innerHTML += `
+                    <tr>
+                        <td style="font-weight:600; color:#fff;">${usuario}</td>
+                        <td style="color:var(--accent-blue); font-family:monospace; font-weight:700;">${cod}</td>
+                        <td>🪙 ${sal}</td>
+                        <td style="color:${pend > 0 ? '#f59e0b' : 'var(--text-muted)'}">${pend > 0 ? '⏳ ' + pend : 'Nenhum'}</td>
+                        <td>
+                            <button class="btn-table-action" onclick="admCarregarMembroParaEditar('${cod}', ${sal})">Gerenciar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // CARREGA AUTOMATICAMENTE OS DADOS DO MEMBRO CLICADO PARA CORREÇÃO
+        function admCarregarMembroParaEditar(codigo, saldoAtual) {
+            document.getElementById('adm-membro-codigo').value = codigo;
+            document.getElementById('adm-membro-novo-saldo').value = saldoAtual;
+            
+            // Dá um scroll leve focado na área de edição para facilitar no celular
+            document.getElementById('modulo-correcao-membro').scrollIntoView({ behavior: 'smooth' });
+        }
+
         function admAtualizarEnquete() {
             const novaPerg = document.getElementById('adm-poll-pergunta').value.trim();
             const o1 = document.getElementById('adm-poll-opt1').value.trim();
@@ -338,15 +426,12 @@
                 return;
             }
 
-            // Define a nova estrutura
             appState.estruturaEnquete = { pergunta: novaPerg, opt1: o1, opt2: o2, opt3: o3 };
             localStorage.setItem('voxpool_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
 
-            // Reseta a contagem de votos para a nova enquete começar do zero
             appState.votos = { opt1: 0, opt2: 0, opt3: 0 };
             localStorage.setItem('voxpool_votos', JSON.stringify(appState.votos));
 
-            // Limpa os campos do formulário ADM
             document.getElementById('adm-poll-pergunta').value = '';
             document.getElementById('adm-poll-opt1').value = '';
             document.getElementById('adm-poll-opt2').value = '';
@@ -356,20 +441,18 @@
             alert("✅ Enquete publicada e ativa com sucesso no site!");
         }
 
-        // CONTROLE MANUAL DE QUALQUER CONTA ATRAVÉS DO CÓDIGO DO MEMBRO
         function admAjustarMembroManual() {
             const codProcurado = document.getElementById('adm-membro-codigo').value.trim().toUpperCase();
             const novoSaldoVal = document.getElementById('adm-membro-novo-saldo').value.trim();
 
             if(!codProcurado || novoSaldoVal === "") {
-                alert("Insira o código do membro (Ex: M-1234) e o novo saldo!");
+                alert("Selecione um membro na lista abaixo ou preencha os dados manualmente!");
                 return;
             }
 
             let bancoUsuarios = JSON.parse(localStorage.getItem('voxpool_usuarios') || "{}");
             let usuarioEncontradoChave = null;
 
-            // Varre o banco procurando pelo código único do membro
             for(let chave in bancoUsuarios) {
                 if(bancoUsuarios[chave].codigo && bancoUsuarios[chave].codigo.toUpperCase() === codProcurado) {
                     usuarioEncontradoChave = chave;
@@ -379,14 +462,16 @@
 
             if(usuarioEncontradoChave) {
                 bancoUsuarios[usuarioEncontradoChave].saldo = parseInt(novoSaldoVal);
-                bancoUsuarios[usuarioEncontradoChave].pendente = 0; // Limpa flags por garantia
+                bancoUsuarios[usuarioEncontradoChave].pendente = 0; 
                 localStorage.setItem('voxpool_usuarios', JSON.stringify(bancoUsuarios));
                 
-                alert(`⚙️ Conta atualizada com sucesso!\n👤 Membro: ${usuarioEncontradoChave}\n🪙 Novo Saldo: ${novoSaldoVal} créditos.`);
                 document.getElementById('adm-membro-codigo').value = '';
                 document.getElementById('adm-membro-novo-saldo').value = '';
+                
+                admAtualizarTabelaMembros(); // Recarrega a lista atualizada em tempo real
+                alert(`⚙️ Conta de "${usuarioEncontradoChave}" atualizada com sucesso para ${novoSaldoVal} créditos.`);
             } else {
-                alert("⚠️ Nenhum membro encontrado com o código informado!");
+                alert("⚠️ Nenhum membro encontrado com o ID informado!");
             }
         }
 
@@ -448,6 +533,7 @@
                     bancoUsuarios[usuarioAlvo].pendente = 0;
                     localStorage.setItem('voxpool_usuarios', JSON.stringify(bancoUsuarios));
 
+                    admAtualizarTabelaMembros(); // Recarrega a lista
                     alert(`✅ SUCESSO!\nUsuário: ${usuarioAlvo}\nCréditos: +${qtdCreditos} liberados.`);
                     document.getElementById('adm-token-input').value = '';
                 } else {
@@ -477,12 +563,12 @@
             appState.saldoCreditos = 0;
             appState.jaVotou = false;
             
+            admAtualizarTabelaMembros();
             atualizarPainelPremio();
             alert("💥 Sistema limpo com sucesso!");
         }
 
         function atualizarPainelPremio() {
-            // Atualiza os textos da enquete baseados na estrutura ativa controlada pelo ADM
             document.getElementById('label-pergunta-ativa').innerText = appState.estruturaEnquete.pergunta;
             document.getElementById('texto-opt1').innerText = appState.estruturaEnquete.opt1;
             document.getElementById('texto-opt2').innerText = appState.estruturaEnquete.opt2;
@@ -549,3 +635,4 @@
         window.onload = function() { renderizarLoja(); };
     </script>
 </body>
+</html>
