@@ -72,6 +72,7 @@
         /* CRONÔMETRO ESTILO DIGITAL */
         .timer-box { background: #000; border: 2px solid #ef4444; border-radius: 12px; padding: 10px; text-align: center; margin-bottom: 20px; font-family: monospace; font-size: 22px; font-weight: bold; color: #ef4444; letter-spacing: 2px; box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.3); }
         .timer-box.active-timer { border-color: var(--accent-green); color: var(--accent-green); box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.3); }
+        .timer-box.paused-timer { border-color: #f59e0b; color: #f59e0b; box-shadow: inset 0 0 10px rgba(245, 158, 11, 0.3); }
 
         .options-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
         .option-label { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
@@ -173,7 +174,7 @@
                         <input type="number" id="adm-poll-tempo" class="form-control" placeholder="Ex: 60 (para 1 hora), 1440 (para 24 horas)" min="1">
                     </div>
                     
-                    <button class="btn-action" style="margin-top: 12px; background: var(--accent-blue);" onclick="admAtualizarEnquete()">⚡ Inserir e Iniciar Cronômetro da Enquete</button>
+                    <button class="btn-action" style="margin-top: 12px; background: var(--accent-blue);" onclick="admAtualizarEnquete()">⚡ Inserir Nova Enquete (Fica Pausada por Padrão)</button>
                 </div>
 
                 <!-- NOVO Bloco 2.1: Modificar / Zerar o Tempo em Tempo Real -->
@@ -181,6 +182,11 @@
                     <div class="adm-section-title" style="color: var(--accent-red)">⏱️ 2.1 Controle de Tempo da Enquete Ativa</div>
                     <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Gerencie o prazo da enquete que está rodando agora sem alterar a pergunta.</p>
                     
+                    <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                        <button class="btn-action" style="background: var(--accent-green); padding: 10px; font-size: 13px;" onclick="admAlternarCronometro('RODANDO')">▶️ Iniciar / Retomar</button>
+                        <button class="btn-action" style="background: #f59e0b; padding: 10px; font-size: 13px;" onclick="admAlternarCronometro('PAUSADO')">⏸️ Pausar Tempo</button>
+                    </div>
+
                     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                         <input type="number" id="adm-ajuste-tempo-minutos" class="form-control" placeholder="Novos minutos para expirar... Ex: 30" min="1">
                         <button class="btn-action" style="width: auto; padding: 0 16px; background: #2563eb; white-space: nowrap; font-size: 13px;" onclick="admAlterarMinutosEnquete()">Atualizar Minutos</button>
@@ -241,8 +247,8 @@
                 </div>
 
                 <!-- RELÓGIO CRONÔMETRO DIGITAL VISÍVEL PARA MEMBROS E ADM -->
-                <div id="cronometro-container" class="timer-box active-timer">
-                    ⏱️ PRAZO RESTANTE: <span id="label-cronometro">00:00:00</span>
+                <div id="cronometro-container" class="timer-box paused-timer">
+                    ⏱️ <span id="status-relogio-label">PAUSADO:</span> <span id="label-cronometro">00:00:00</span>
                 </div>
 
                 <div class="poll-card">
@@ -320,7 +326,8 @@
         const enquetePadrao = {
             pergunta: "Quem possui a maior torcida engajada e ativa no cenário nacional atual?",
             opt1: "BOLSONARO", opt2: "LULA", opt3: "NENHUM DELES",
-            finalizaEm: Date.now() + (60 * 60 * 1000)
+            tempoRestanteMilis: 60 * 60 * 1000, // Salva o tempo em formato estático líquido
+            statusTempo: "PAUSADO" // "RODANDO" ou "PAUSADO"
         };
 
         const appState = {
@@ -442,6 +449,7 @@
             appState.opcaoSelecionada = null;
 
             navegarPara('view-enquetes');
+            renderizarEstruturaEnquete();
             atualizarPainelPremio();
             inicializarCronometro();
         }
@@ -453,49 +461,118 @@
             document.getElementById('view-auth').style.display = 'flex';
         }
 
-        /* SISTEMA DO CRONÔMETRO DIGITAL */
+        function renderizarEstruturaEnquete() {
+            document.getElementById('label-pergunta-ativa').innerText = appState.estruturaEnquete.pergunta;
+            document.getElementById('texto-opt1').innerText = appState.estruturaEnquete.opt1;
+            document.getElementById('texto-opt2').innerText = appState.estruturaEnquete.opt2;
+            document.getElementById('texto-opt3').innerText = appState.estruturaEnquete.opt3;
+            atualizarVotosVisuais();
+        }
+
+        function atualizarVotosVisuais() {
+            document.getElementById('votos-opt1').innerText = `${appState.votos.opt1} votos`;
+            document.getElementById('votos-opt2').innerText = `${appState.votos.opt2} votos`;
+            document.getElementById('votos-opt3').innerText = `${appState.votos.opt3} votos`;
+        }
+
+        function navegarPara(idSecao) {
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+            const destino = document.getElementById(idSecao);
+            if(destino) destino.classList.add('active');
+            if(idSecao === 'view-loja') renderizarLoja();
+        }
+
+        /* SISTEMA DO CRONÔMETRO DIGITAL SEGURO E SUBMISSÍVEL */
         function inicializarCronometro() {
             clearInterval(intervaloCronometro);
             
             const labelRelogio = document.getElementById('label-cronometro');
+            const statusLabel = document.getElementById('status-relogio-label');
             const boxRelogio = document.getElementById('cronometro-container');
 
-            intervaloCronometro = setInterval(() => {
-                const agora = Date.now();
-                const tempoRestante = appState.estruturaEnquete.finalizaEm - agora;
-
-                if (tempoRestante <= 0) {
-                    clearInterval(intervaloCronometro);
+            function atualizarVisualRelogio(totalMilis) {
+                if (totalMilis <= 0) {
                     labelRelogio.innerText = "00:00:00 - ENCERRADA";
+                    statusLabel.innerText = "FIM:";
                     document.getElementById('btn-votar').disabled = true;
                     document.getElementById('btn-votar').innerText = "Enquete Finalizada e Paga!";
                     appState.enqueteEncerrada = true;
                     if(boxRelogio) {
                         boxRelogio.style.borderColor = "#ef4444";
-                        boxRelogio.classList.remove('active-timer');
+                        boxRelogio.className = "timer-box";
                     }
-                    return;
+                    return false;
                 }
-
+                
                 appState.enqueteEncerrada = false;
-                if(boxRelogio) {
-                    boxRelogio.style.borderColor = "var(--accent-green)";
-                    boxRelogio.classList.add('active-timer');
-                }
-
-                const horas = Math.floor(tempoRestante / (1000 * 60 * 60));
-                const minutos = Math.floor((tempoRestante % (1000 * 60 * 60)) / (1000 * 60));
-                const segundos = Math.floor((tempoRestante % (1000 * 60)) / 1000);
+                const horas = Math.floor(totalMilis / (1000 * 60 * 60));
+                const minutos = Math.floor((totalMilis % (1000 * 60 * 60)) / (1000 * 60));
+                const segundos = Math.floor((totalMilis % (1000 * 60)) / 1000);
 
                 const hDisplay = horas < 10 ? "0" + horas : horas;
-                const mDisplay = minutes = minutos < 10 ? "0" + minutos : minutos;
+                const mDisplay = minutos < 10 ? "0" + minutos : minutos;
                 const sDisplay = segundos < 10 ? "0" + segundos : segundos;
 
                 labelRelogio.innerText = `${hDisplay}:${mDisplay}:${sDisplay}`;
+                return true;
+            }
+
+            // Renderização estática inicial baseada no estado salvo
+            atualizarVisualRelogio(appState.estruturaEnquete.tempoRestanteMilis);
+
+            if (appState.estruturaEnquete.statusTempo === "PAUSADO") {
+                statusLabel.innerText = "PAUSADO:";
+                if(boxRelogio) boxRelogio.className = "timer-box paused-timer";
+                if (appState.estruturaEnquete.tempoRestanteMilis <= 0) {
+                    document.getElementById('btn-votar').disabled = true;
+                    document.getElementById('btn-votar').innerText = "Enquete Finalizada e Paga!";
+                }
+                return;
+            }
+
+            statusLabel.innerText = "PRAZO RESTANTE:";
+            if(boxRelogio) boxRelogio.className = "timer-box active-timer";
+
+            let ultimoTimestamp = Date.now();
+
+            intervaloCronometro = setInterval(() => {
+                if (appState.estruturaEnquete.statusTempo === "PAUSADO") {
+                    clearInterval(intervaloCronometro);
+                    return;
+                }
+
+                const agora = Date.now();
+                const decorrido = agora - ultimoTimestamp;
+                ultimoTimestamp = agora;
+
+                appState.estruturaEnquete.tempoRestanteMilis -= decorrido;
+
+                if (appState.estruturaEnquete.tempoRestanteMilis <= 0) {
+                    appState.estruturaEnquete.tempoRestanteMilis = 0;
+                    appState.estruturaEnquete.statusTempo = "PAUSADO";
+                    localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
+                    atualizarVisualRelogio(0);
+                    clearInterval(intervaloCronometro);
+                    return;
+                }
+
+                localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
+                atualizarVisualRelogio(appState.estruturaEnquete.tempoRestanteMilis);
             }, 1000);
         }
 
-        /* FUNÇÕES ADM DE ATUALIZAÇÃO DO CRONÔMETRO */
+        /* CONTROLE DO CRONÔMETRO VIA ADM (RODANDO / PAUSADO) */
+        function admAlternarCronometro(novoEstado) {
+            if (appState.estruturaEnquete.tempoRestanteMilis <= 0 && novoEstado === "RODANDO") {
+                alert("O tempo já esgotou. Defina novos minutos antes de iniciar!");
+                return;
+            }
+            appState.estruturaEnquete.statusTempo = novoEstado;
+            localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
+            inicializarCronometro();
+            alert(`O cronômetro agora está: ${novoEstado}`);
+        }
+
         function admAlterarMinutosEnquete() {
             const novosMinutos = parseInt(document.getElementById('adm-ajuste-tempo-minutos').value.trim());
             
@@ -504,25 +581,27 @@
                 return;
             }
 
-            // Redefine o vencimento com base no momento atual
-            appState.estruturaEnquete.finalizaEm = Date.now() + (novosMinutos * 60 * 1000);
+            appState.estruturaEnquete.tempoRestanteMilis = novosMinutos * 60 * 1000;
             localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
             
-            // Se o botão de votação estava travado, reativa ele
-            document.getElementById('btn-votar').disabled = false;
-            document.getElementById('btn-votar').innerText = "Confirmar Voto (1 Crédito)";
+            if (appState.estruturaEnquete.tempoRestanteMilis > 0 && appState.enqueteEncerrada) {
+                document.getElementById('btn-votar').disabled = false;
+                document.getElementById('btn-votar').innerText = "Confirmar Voto (1 Crédito)";
+            }
 
-            document.getElementById('adm-ajuste-tempo-minutos').value = '';
             inicializarCronometro();
-            alert(`✅ Tempo atualizado! Restam agora ${novosMinutos} minutos para finalizar.`);
+            alert(`Tempo redefinido com sucesso para ${novosMinutos} minutos!`);
         }
 
         function admZerarTempoEnquete() {
-            if(confirm("Tem certeza que deseja ZERAR o cronômetro? Isso encerrará as apostas imediatamente para todos os membros.")) {
-                appState.estruturaEnquete.finalizaEm = Date.now(); // Joga o fim para o momento atual exacto
-                localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
-                inicializarCronometro();
-            }
+            if(!confirm("Tem certeza que deseja encerrar a enquete imediatamente?")) return;
+            
+            appState.estruturaEnquete.tempoRestanteMilis = 0;
+            appState.estruturaEnquete.statusTempo = "PAUSADO";
+            localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
+            
+            inicializarCronometro();
+            alert("Tempo zerado! Enquete encerrada.");
         }
 
         function admAtualizarEnquete() {
@@ -530,240 +609,257 @@
             const o1 = document.getElementById('adm-poll-opt1').value.trim();
             const o2 = document.getElementById('adm-poll-opt2').value.trim();
             const o3 = document.getElementById('adm-poll-opt3').value.trim();
-            const minutosDuracao = parseInt(document.getElementById('adm-poll-tempo').value.trim());
+            const minutosInput = parseInt(document.getElementById('adm-poll-tempo').value.trim());
 
-            if(!novaPerg || !o1 || !o2 || !o3 || isNaN(minutosDuracao) || minutosDuracao <= 0) {
-                alert("Por favor, preencha a pergunta, as 3 opções e insira um tempo válido em minutos!");
+            if(!novaPerg || !o1 || !o2 || !o3 || isNaN(minutosInput) || minutosInput <= 0) {
+                alert("Preencha todos os dados da enquete e o tempo em minutos!");
                 return;
             }
 
-            const timestampFinal = Date.now() + (minutosDuracao * 60 * 1000);
-
-            appState.estruturaEnquete = { 
-                pergunta: novaPerg, opt1: o1, opt2: o2, opt3: o3, 
-                finalizaEm: timestampFinal 
+            appState.estruturaEnquete = {
+                pergunta: novaPerg,
+                opt1: o1, opt2: o2, opt3: o3,
+                tempoRestanteMilis: minutosInput * 60 * 1000,
+                statusTempo: "PAUSADO" // Cria salvando pausada para o ADM gerenciar o início seguro
             };
-            
-            localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
 
             appState.votos = { opt1: 0, opt2: 0, opt3: 0 };
+            localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
             localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
 
-            appState.jaVotou = false;
+            renderizarEstruturaEnquete();
+            
             document.getElementById('btn-votar').disabled = false;
             document.getElementById('btn-votar').innerText = "Confirmar Voto (1 Crédito)";
-            document.querySelectorAll('.option-label').forEach(el => el.classList.remove('selected'));
-
-            document.getElementById('adm-poll-pergunta').value = '';
-            document.getElementById('adm-poll-opt1').value = '';
-            document.getElementById('adm-poll-opt2').value = '';
-            document.getElementById('adm-poll-opt3').value = '';
-            document.getElementById('adm-poll-tempo').value = '';
-
-            atualizarPainelPremio();
-            inicializarCronometro();
-            alert("✅ Nova enquete publicada e relógio iniciado em tempo real!");
-        }
-
-        function admAtualizarTabelaMembros() {
-            const corpoTabela = document.getElementById('adm-tabela-membros-corpo');
-            corpoTabela.innerHTML = '';
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-            const chaves = Object.keys(bancoUsuarios);
             
-            if(chaves.length === 0) {
-                corpoTabela.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted);">Nenhum membro cadastrado.</td></tr>`;
-                return;
-            }
-
-            chaves.forEach(emailChave => {
-                const dados = bancoUsuarios[emailChave];
-                corpoTabela.innerHTML += `
-                    <tr>
-                        <td style="color:var(--accent-blue); font-family:monospace; font-weight:700;">${dados.codigo}</td>
-                        <td style="font-weight:600; color:#fff;">${dados.nome}</td>
-                        <td>${emailChave}</td>
-                        <td>${dados.whatsapp}</td>
-                        <td>${dados.cpf}</td>
-                        <td style="color:var(--accent-green);">${dados.chavePix}</td>
-                        <td>🪙 ${dados.saldo}</td>
-                        <td style="color:${dados.pendente > 0 ? '#f59e0b' : 'var(--text-muted)'}">${dados.pendente > 0 ? '⏳ ' + dados.pendente : '0'}</td>
-                        <td style="color:${dados.saquePendente > 0 ? '#ef4444' : 'var(--text-muted)'}">${dados.saquePendente > 0 ? '💸 ' + dados.saquePendente : '0'}</td>
-                        <td>
-                            <button class="btn-table-action" onclick="admCarregarMembroParaEditar('${dados.codigo}', ${dados.saldo})">Gerenciar</button>
-                            <button class="btn-table-action danger" onclick="admDeletarMembroForcado('${emailChave}')">Excluir</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        function admCarregarMembroParaEditar(codigo, saldoAtual) {
-            document.getElementById('adm-membro-codigo').value = codigo;
-            document.getElementById('adm-membro-novo-saldo').value = saldoAtual;
-            document.getElementById('modulo-correcao-membro').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function admDeletarMembroForcado(emailMembro) {
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-            if(bancoUsuarios[emailMembro] && confirm(`Deseja EXCLUIR permanentemente o membro "${bancoUsuarios[emailMembro].nome}"?`)){
-                delete bancoUsuarios[emailMembro];
-                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-                admAtualizarTabelaMembros();
-            }
-        }
-
-        function membroDeletarPropriaConta() {
-            if(confirm("Deseja excluir seu cadastro permanentemente?")) {
-                let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-                delete bancoUsuarios[usuarioLogado.login];
-                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-                fazerLogout();
-            }
-        }
-
-        function solicitarSaqueMembro() {
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-            const dadosUser = bancoUsuarios[usuarioLogado.login];
-            if(!dadosUser || dadosUser.saldo <= 0) { alert("Saldo insuficiente para saques!"); return; }
-
-            const valorSaqueStr = prompt(`Quanto deseja sacar? (Disponível: ${dadosUser.saldo} Créditos):`);
-            const valorSaque = parseInt(valorSaqueStr);
-
-            if(isNaN(valorSaque) || valorSaque <= 0 || valorSaque > dadosUser.saldo) { alert("Valor inválido!"); return; }
-
-            dadosUser.saldo -= valorSaque;
-            dadosUser.saquePendente = (dadosUser.saquePendente || 0) + valorSaque;
-            bancoUsuarios[usuarioLogado.login] = dadosUser;
-            localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-
-            appState.saldoCreditos = dadosUser.saldo;
-            document.getElementById('saldo-saque-disponivel').innerText = dadosUser.saldo;
-            document.getElementById('badge-saque-pendente').style.display = 'inline-block';
-            atualizarPainelPremio();
-
-            const msg = encodeURIComponent(`⚠️ *SOLICITAÇÃO DE SAQUE*\n👤 Membro: ${dadosUser.nome}\n🆔 ID: ${dadosUser.codigo}\n💸 VALOR: ${valorSaque} Créditos\n🔑 PIX: ${dadosUser.chavePix}`);
-            window.open(`https://wa.me/22992777193?text=${msg}`, '_blank');
-        }
-
-        function admAjustarMembroManual() {
-            const codProcurado = document.getElementById('adm-membro-codigo').value.trim().toUpperCase();
-            const novoSaldoVal = document.getElementById('adm-membro-novo-saldo').value.trim();
-            if(!codProcurado || novoSaldoVal === "") return;
-
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-            for(let chave in bancoUsuarios) {
-                if(bancoUsuarios[chave].codigo && bancoUsuarios[chave].codigo.toUpperCase() === codProcurado) {
-                    bancoUsuarios[chave].saldo = parseInt(novoSaldoVal);
-                    bancoUsuarios[chave].saquePendente = 0;
-                    bancoUsuarios[chave].pendente = 0;
-                    localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-                    break;
-                }
-            }
-            document.getElementById('adm-membro-codigo').value = '';
-            document.getElementById('adm-membro-novo-saldo').value = '';
-            admAtualizarTabelaMembros();
-            alert("Conta modificada com sucesso.");
-        }
-
-        function abrirCheckoutPix(qtd, total) {
-            const agora = new Date();
-            pacotePendente = { qtd, total, hora: agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) };
-            document.getElementById('modal-info-qtd').innerText = `${qtd} Créditos`;
-            document.getElementById('modal-info-preco').innerText = `R$ ${total.toFixed(2)}`;
-            document.getElementById('modal-pix').style.display = 'flex';
-        }
-
-        function fecharModalPix() { document.getElementById('modal-pix').style.display = 'none'; }
-
-        function solicitarLiberacaoPix() {
-            if(!pacotePendente) return;
-            const token = btoa(`${usuarioLogado.login}|${pacotePendente.qtd}|${pacotePendente.hora}`).replace(/=/g, '');
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-            bancoUsuarios[usuarioLogado.login].pendente = pacotePendente.qtd;
-            localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-            document.getElementById('badge-pendente').style.display = 'inline-block';
-
-            const msg = encodeURIComponent(`Olá, fiz o Pix!\n👤 Membro: ${usuarioLogado.nome}\n🪙 Créditos: ${pacotePendente.qtd}\n🔑 TOKEN:\n${token}`);
-            window.open(`https://wa.me/22992777193?text=${msg}`, '_blank');
-            fecharModalPix();
-        }
-
-        function admProcessarToken() {
-            const token = document.getElementById('adm-token-input').value.trim();
-            try {
-                const [usuarioAlvo, creditosAString] = atob(token).split('|');
-                let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-                if(bancoUsuarios[usuarioAlvo]) {
-                    bancoUsuarios[usuarioAlvo].saldo += parseInt(creditosAString);
-                    bancoUsuarios[usuarioAlvo].pendente = 0;
-                    localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-                    admAtualizarTabelaMembros();
-                    document.getElementById('adm-token-input').value = '';
-                    alert("✅ Créditos aprovados!");
-                }
-            } catch(e) { alert("Token inválido!"); }
-        }
-
-        function atualizarPainelPremio() {
-            document.getElementById('label-pergunta-ativa').innerText = appState.estruturaEnquete.pergunta;
-            document.getElementById('texto-opt1').innerText = appState.estruturaEnquete.opt1;
-            document.getElementById('texto-opt2').innerText = appState.estruturaEnquete.opt2;
-            document.getElementById('texto-opt3').innerText = appState.estruturaEnquete.opt3;
-            const totalVotos = appState.votos.opt1 + appState.votos.opt2 + appState.votos.opt3;
-            document.getElementById('label-premio-total').innerText = `R$ ${(totalVotos * 5).toFixed(2)}`;
-            document.getElementById('votos-opt1').innerText = `${appState.votos.opt1} votos`;
-            document.getElementById('votos-opt2').innerText = `${appState.votos.opt2} votos`;
-            document.getElementById('votos-opt3').innerText = `${appState.votos.opt3} votos`;
-            document.getElementById('saldo-atual').innerText = appState.saldoCreditos;
+            inicializarCronometro();
+            alert("Nova enquete inserida com sucesso! Clique em 'Iniciar / Retomar' no painel 2.1 para abrir a votação.");
         }
 
         function selecionarOpcao(idOpcao) {
-            if(appState.jaVotou || appState.enqueteEncerrada) return;
+            if(appState.enqueteEncerrada || appState.estruturaEnquete.statusTempo === "PAUSADO") {
+                alert("A votação está suspensa ou encerrada no momento.");
+                return;
+            }
+            if(appState.jaVotou) return;
             document.querySelectorAll('.option-label').forEach(el => el.classList.remove('selected'));
             document.getElementById(`container-${idOpcao}`).classList.add('selected');
             appState.opcaoSelecionada = idOpcao;
         }
 
         function processarVoto() {
-            if(appState.enqueteEncerrada) { alert("Esta enquete já encerrou!"); return; }
-            if (!appState.opcaoSelecionada) return;
-            if (appState.saldoCreditos < 1) { alert("Saldo insuficiente!"); return; }
+            if(appState.estruturaEnquete.statusTempo === "PAUSADO") {
+                alert("Cronômetro pausado pelo Administrador. Aguarde a liberação para votar!");
+                return;
+            }
+            if(!appState.opcaoSelecionada) { alert("Selecione uma opção para votar!"); return; }
+            if(appState.saldoCreditos < 1) { alert("Você não possui créditos suficientes! Compre mais na Loja."); return; }
+
+            appState.saldoCreditos -= 1;
+            appState.votos[appState.opcaoSelecionada] += 1;
+            appState.jaVotou = true;
+
+            localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
 
             let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-            appState.saldoCreditos -= 1;
-            bancoUsuarios[usuarioLogado.login].saldo = appState.saldoCreditos;
-            localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
+            if(bancoUsuarios[usuarioLogado.login]) {
+                bancoUsuarios[usuarioLogado.login].saldo = appState.saldoCreditos;
+                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
+            }
 
-            appState.votos[appState.opcaoSelecionada] += 1;
-            localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
-            appState.jaVotou = true;
-            document.getElementById('btn-votar').disabled = true;
-            document.getElementById('btn-votar').innerText = "Voto Computado!";
-            document.getElementById('saldo-saque-disponivel').innerText = appState.saldoCreditos;
+            document.getElementById('saldo-atual').innerText = appState.saldoCreditos;
+            atualizarVotosVisuais();
             atualizarPainelPremio();
+
+            document.getElementById('btn-votar').disabled = true;
+            document.getElementById('btn-votar').innerText = "Voto Computado com Sucesso!";
+            alert("Seu voto foi registrado!");
         }
 
+        function atualizarPainelPremio() {
+            const totalVotos = appState.votos.opt1 + appState.votos.opt2 + appState.votos.opt3;
+            const valorReal = totalVotos * 5.00; 
+            document.getElementById('label-premio-total').innerText = `R$ ${valorReal.toFixed(2).replace('.', ',')}`;
+        }
+
+        /* FUNÇÕES ADM DE MEMBROS */
+        function admAtualizarTabelaMembros() {
+            const corpo = document.getElementById('adm-tabela-membros-corpo');
+            if(!corpo) return;
+            corpo.innerHTML = "";
+            
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            
+            Object.keys(bancoUsuarios).forEach(email => {
+                const u = bancoUsuarios[email];
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${u.codigo || '-'}</b></td>
+                    <td>${u.nome || '-'}</td>
+                    <td>${email}</td>
+                    <td>${u.whatsapp || '-'}</td>
+                    <td>${u.cpf || '-'}</td>
+                    <td><small>${u.chavePix || '-'}</small></td>
+                    <td>🪙 <b>${u.saldo || 0}</b></td>
+                    <td style="color:${u.pendente > 0 ? '#f59e0b':'#9ca3af'}">R$ ${u.pendente || 0}</td>
+                    <td style="color:${u.saquePendente > 0 ? '#3b82f6':'#9ca3af'}">R$ ${u.saquePendente || 0}</td>
+                    <td>
+                        <button class="btn-table-action" onclick="admCarregarMembroParaCorrecao('${u.codigo}')">Mudar Saldo</button>
+                    </td>
+                `;
+                corpo.appendChild(tr);
+            });
+            if(Object.keys(bancoUsuarios).length === 0) {
+                corpo.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted);">Nenhum membro cadastrado.</td></tr>`;
+            }
+        }
+
+        function admCarregarMembroParaCorrecao(codigoMembro) {
+            document.getElementById('adm-membro-codigo').value = codigoMembro;
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            const email = Object.keys(bancoUsuarios).find(k => bancoUsuarios[k].codigo === codigoMembro);
+            if(email) {
+                document.getElementById('adm-membro-novo-saldo').value = bancoUsuarios[email].saldo || 0;
+                document.getElementById('modulo-correcao-membro').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function admAjustarMembroManual() {
+            const cod = document.getElementById('adm-membro-codigo').value;
+            const novoSaldo = parseInt(document.getElementById('adm-membro-novo-saldo').value);
+            
+            if(!cod || isNaN(novoSaldo)) { alert("Selecione um membro válido na tabela primeiro!"); return; }
+
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            const email = Object.keys(bancoUsuarios).find(k => bancoUsuarios[k].codigo === cod);
+            
+            if(email) {
+                bancoUsuarios[email].saldo = novoSaldo;
+                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
+                admAtualizarTabelaMembros();
+                alert("Saldo atualizado manualmente!");
+            }
+        }
+
+        function admProcessarToken() {
+            const token = document.getElementById('adm-token-input').value.trim();
+            if(!token) { alert("Cole o token enviado pelo usuário!"); return; }
+            
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            const email = Object.keys(bancoUsuarios).find(k => bancoUsuarios[k].codigo === token);
+            
+            if(email) {
+                const p = bancoUsuarios[email].pendente;
+                if(p <= 0) { alert("Esse usuário não possui recargas pendentes!"); return; }
+                
+                let moedasAdicionadas = 0;
+                if(p >= 4000) moedasAdicionadas = 1000;
+                else if(p >= 2250) moedasAdicionadas = 500;
+                else if(p >= 1000) moedasAdicionadas = 200;
+                else if(p >= 300) moedasAdicionadas = 50;
+                else if(p >= 130) moedasAdicionadas = 20;
+                else if(p >= 70) moedasAdicionadas = 10;
+                else if(p >= 40) moedasAdicionadas = 5;
+                else if(p >= 9) moedasAdicionadas = 1;
+
+                bancoUsuarios[email].saldo = (bancoUsuarios[email].saldo || 0) + moedasAdicionadas;
+                bancoUsuarios[email].pendente = 0;
+                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
+                
+                document.getElementById('adm-token-input').value = "";
+                admAtualizarTabelaMembros();
+                alert(`Sucesso! Adicionado ${moedasAdicionadas} créditos à conta do usuário.`);
+            } else {
+                alert("Token/ID inválido ou não encontrado!");
+            }
+        }
+
+        /* COMPONENTES DA LOJA */
         function renderizarLoja() {
-            const grid = document.getElementById('container-pacotes');
-            grid.innerHTML = '';
+            const container = document.getElementById('container-pacotes');
+            container.innerHTML = "";
+            document.getElementById('saldo-atual').innerText = appState.saldoCreditos;
+            
             pacotesMoedas.forEach(p => {
-                grid.innerHTML += `<div class="credit-card">
-                    <div style="display:flex; justify-content:space-between; font-weight:700;">
-                        <span>${p.qtd} Créditos</span><span>R$ ${p.total.toFixed(2)}</span>
+                const div = document.createElement('div');
+                div.className = "credit-card";
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-size:18px; font-weight:800; color:white;">🪙 ${p.qtd} ${p.qtd === 1 ? 'Crédito':'Créditos'}</div>
+                            <div style="font-size:12px; color:var(--text-muted);">Para votar nas enquetes</div>
+                        </div>
+                        <div style="font-size:20px; font-weight:800; color:var(--accent-green)">R$ ${p.total.toFixed(2).replace('.',',')}</div>
                     </div>
-                    <button class="btn-buy-package" onclick="abrirCheckoutPix(${p.qtd}, ${p.total})">Adquirir Pacote</button>
-                </div>`;
+                    <button class="btn-buy-package" onclick="abrirCheckoutPix(${p.qtd}, ${p.total})">Comprar via Pix</button>
+                `;
+                container.appendChild(div);
             });
         }
 
-        function navegarPara(idVisao) {
-            document.querySelectorAll('.view-section').forEach(secao => secao.style.display = 'none');
-            document.getElementById(idVisao).style.display = 'block';
+        function abrirCheckoutPix(qtd, total) {
+            pacotePendente = { qtd, total };
+            document.getElementById('modal-info-qtd').innerText = `${qtd} Créditos`;
+            document.getElementById('modal-info-preco').innerText = `R$ ${total.toFixed(2).replace('.',',')}`;
+            document.getElementById('modal-pix').style.display = 'flex';
         }
 
-        window.onload = function() { renderizarLoja(); };
+        function fecharModalPix() {
+            document.getElementById('modal-pix').style.display = 'none';
+            pacotePendente = null;
+        }
+
+        function solicitarLiberacaoPix() {
+            if(!pacotePendente) return;
+            
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            if(bancoUsuarios[usuarioLogado.login]) {
+                bancoUsuarios[usuarioLogado.login].pendente = pacotePendente.total;
+                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
+            }
+            
+            document.getElementById('badge-pendente').style.display = 'inline-block';
+            
+            const msgWhatsApp = `Olá, realizei o pagamento via Pix no valor de R$ ${pacotePendente.total.toFixed(2)} referente ao pacote de ${pacotePendente.qtd} Créditos. Liberar meu ID: ${usuarioLogado.codigo}`;
+            const urlWpp = `https://api.whatsapp.com/send?phone=5522997184205&text=${encodeURIComponent(msgWhatsApp)}`;
+            
+            fecharModalPix();
+            window.open(urlWpp, '_blank');
+        }
+
+        function solicitarSaqueMembro() {
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            const d = bancoUsuarios[usuarioLogado.login];
+            
+            if(!d || d.saldo <= 0) { alert("Você não possui saldo em créditos para realizar saques!"); return; }
+            
+            const valorEmDinheiro = d.saldo * 5.00;
+            if(!confirm(`Deseja converter todos os seus ${d.saldo} créditos em um saque de R$ ${valorEmDinheiro.toFixed(2)} direto na sua chave Pix cadastrada?`)) return;
+
+            d.saquePendente = valorEmDinheiro;
+            d.saldo = 0;
+            appState.saldoCreditos = 0;
+            
+            localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
+            document.getElementById('saldo-atual').innerText = 0;
+            document.getElementById('saldo-saque-disponivel').innerText = 0;
+            document.getElementById('badge-saque-pendente').style.display = 'inline-block';
+            
+            const msgWpp = `Solicitação de Saque! Converti meus créditos em dinheiro. Por favor aprovem meu pagamento de R$ ${valorEmDinheiro.toFixed(2)}. Meu ID de Membro é: ${usuarioLogado.codigo}`;
+            window.open(`https://api.whatsapp.com/send?phone=5522997184205&text=${encodeURIComponent(msgWpp)}`, '_blank');
+        }
+
+        function membroDeletarPropriaConta() {
+            if(!confirm("⚠️ ATENÇÃO:\nTem certeza que quer DELETAR de vez a sua conta? Todos os seus saldos de créditos e saques serão apagados imediatamente e permanentemente!")) return;
+            
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            if(bancoUsuarios[usuarioLogado.login]) {
+                delete bancoUsuarios[usuarioLogado.login];
+                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
+                alert("Sua conta foi excluída do sistema.");
+                fazerLogout();
+            }
+        }
     </script>
 </body>
 </html>
