@@ -56,7 +56,6 @@
         th, td { padding: 12px; border-bottom: 1px solid var(--border-color); }
         th { background: rgba(255, 255, 255, 0.02); font-weight: 600; color: var(--text-muted); }
         .btn-table-action { background: var(--accent-blue); border: none; color: white; padding: 6px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; }
-        .btn-table-action.danger { background: var(--accent-red); margin-left: 4px; }
 
         /* CONTEÚDO */
         main { max-width: 600px; width: 100%; margin: 0 auto; padding: 24px 16px; flex: 1; }
@@ -177,7 +176,7 @@
                     <button class="btn-action" style="margin-top: 12px; background: var(--accent-blue);" onclick="admAtualizarEnquete()">⚡ Inserir Nova Enquete (Fica Pausada por Padrão)</button>
                 </div>
 
-                <!-- NOVO Bloco 2.1: Modificar / Zerar o Tempo em Tempo Real -->
+                <!-- Bloco 2.1: Modificar / Zerar o Tempo em Tempo Real -->
                 <div class="adm-box" style="border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.02);">
                     <div class="adm-section-title" style="color: var(--accent-red)">⏱️ 2.1 Controle de Tempo da Enquete Ativa</div>
                     <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Gerencie o prazo da enquete que está rodando agora sem alterar a pergunta.</p>
@@ -282,7 +281,7 @@
                             </div>
                             <button class="btn-nav" style="background:var(--accent-green); color:white; border:none;" onclick="solicitarSaqueMembro()">💸 Sacar Saldo</button>
                         </div>
-                        <button class="btn-nav" style="background:transparent; color:var(--accent-red); border:1px solid rgba(239,68,68,0.2); width:100%; padding:10px; border-radius:12px; margin-top:10px;" onclick="membroDeletarPropriaConta()">⚠️ Excluir My Account</button>
+                        <button class="btn-nav" style="background:transparent; color:var(--accent-red); border:1px solid rgba(239,68,68,0.2); width:100%; padding:10px; border-radius:12px; margin-top:10px;" onclick="membroDeletarPropriaConta()">⚠️ Excluir Minha Conta</button>
                     </div>
                 </div>
             </section>
@@ -326,8 +325,8 @@
         const enquetePadrao = {
             pergunta: "Quem possui a maior torcida engajada e ativa no cenário nacional atual?",
             opt1: "BOLSONARO", opt2: "LULA", opt3: "NENHUM DELES",
-            tempoRestanteMilis: 60 * 60 * 1000, // Salva o tempo em formato estático líquido
-            statusTempo: "PAUSADO" // "RODANDO" ou "PAUSADO"
+            tempoRestanteMilis: 60 * 60 * 1000,
+            statusTempo: "PAUSADO"
         };
 
         const appState = {
@@ -344,6 +343,17 @@
             { qtd: 20, total: 130.00 }, { qtd: 50, total: 300.00 }, { qtd: 100, total: 550.00 },
             { qtd: 200, total: 1000.00 }, { qtd: 500, total: 2250.00 }, { qtd: 1000, total: 4000.00 }
         ];
+
+        // FUNÇÃO DE SEGURANÇA: Garante que o banco de dados de usuários exista sem apagar nada antigo
+        function obterBancoUsuarios() {
+            try {
+                const dados = localStorage.getItem('voxpopuli_usuarios');
+                return dados ? JSON.parse(dados) : {};
+            } catch (e) {
+                console.error("Erro ao ler banco de usuários, resetando de forma segura:", e);
+                return {};
+            }
+        }
 
         function alternarModoAuth() {
             const camposCadastro = document.querySelectorAll('.campo-cadastro');
@@ -378,7 +388,7 @@
                 return;
             }
 
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            let bancoUsuarios = obterBancoUsuarios();
 
             if(modoAuth === "CADASTRO") {
                 const nomeInput = document.getElementById('auth-nome').value.trim();
@@ -431,7 +441,7 @@
                 badgeCod.innerText = `ID: ${usuarioLogado.codigo}`;
                 badgeCod.style.display = 'block';
                 
-                let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+                let bancoUsuarios = obterBancoUsuarios();
                 const dadosUser = bancoUsuarios[usuarioLogado.login];
                 if(dadosUser) {
                     document.getElementById('badge-pendente').style.display = (dadosUser.pendente > 0) ? 'inline-block' : 'none';
@@ -482,7 +492,6 @@
             if(idSecao === 'view-loja') renderizarLoja();
         }
 
-        /* SISTEMA DO CRONÔMETRO DIGITAL SEGURO E SUBMISSÍVEL */
         function inicializarCronometro() {
             clearInterval(intervaloCronometro);
             
@@ -510,14 +519,13 @@
                 const segundos = Math.floor((totalMilis % (1000 * 60)) / 1000);
 
                 const hDisplay = horas < 10 ? "0" + horas : horas;
-                const mDisplay = minutos < 10 ? "0" + minutos : minutos;
+                const mDisplay = minutos < 10 ? "0" + minutos : minutes;
                 const sDisplay = segundos < 10 ? "0" + segundos : segundos;
 
                 labelRelogio.innerText = `${hDisplay}:${mDisplay}:${sDisplay}`;
                 return true;
             }
 
-            // Renderização estática inicial baseada no estado salvo
             atualizarVisualRelogio(appState.estruturaEnquete.tempoRestanteMilis);
 
             if (appState.estruturaEnquete.statusTempo === "PAUSADO") {
@@ -561,7 +569,6 @@
             }, 1000);
         }
 
-        /* CONTROLE DO CRONÔMETRO VIA ADM (RODANDO / PAUSADO) */
         function admAlternarCronometro(novoEstado) {
             if (appState.estruturaEnquete.tempoRestanteMilis <= 0 && novoEstado === "RODANDO") {
                 alert("O tempo já esgotou. Defina novos minutos antes de iniciar!");
@@ -620,7 +627,7 @@
                 pergunta: novaPerg,
                 opt1: o1, opt2: o2, opt3: o3,
                 tempoRestanteMilis: minutosInput * 60 * 1000,
-                statusTempo: "PAUSADO" // Cria salvando pausada para o ADM gerenciar o início seguro
+                statusTempo: "PAUSADO"
             };
 
             appState.votos = { opt1: 0, opt2: 0, opt3: 0 };
@@ -661,7 +668,7 @@
 
             localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
 
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            let bancoUsuarios = obterBancoUsuarios();
             if(bancoUsuarios[usuarioLogado.login]) {
                 bancoUsuarios[usuarioLogado.login].saldo = appState.saldoCreditos;
                 localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
@@ -682,13 +689,12 @@
             document.getElementById('label-premio-total').innerText = `R$ ${valorReal.toFixed(2).replace('.', ',')}`;
         }
 
-        /* FUNÇÕES ADM DE MEMBROS */
         function admAtualizarTabelaMembros() {
             const corpo = document.getElementById('adm-tabela-membros-corpo');
             if(!corpo) return;
             corpo.innerHTML = "";
             
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            let bancoUsuarios = obterBancoUsuarios();
             
             Object.keys(bancoUsuarios).forEach(email => {
                 const u = bancoUsuarios[email];
@@ -716,7 +722,7 @@
 
         function admCarregarMembroParaCorrecao(codigoMembro) {
             document.getElementById('adm-membro-codigo').value = codigoMembro;
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            let bancoUsuarios = obterBancoUsuarios();
             const email = Object.keys(bancoUsuarios).find(k => bancoUsuarios[k].codigo === codigoMembro);
             if(email) {
                 document.getElementById('adm-membro-novo-saldo').value = bancoUsuarios[email].saldo || 0;
@@ -730,7 +736,7 @@
             
             if(!cod || isNaN(novoSaldo)) { alert("Selecione um membro válido na tabela primeiro!"); return; }
 
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            let bancoUsuarios = obterBancoUsuarios();
             const email = Object.keys(bancoUsuarios).find(k => bancoUsuarios[k].codigo === cod);
             
             if(email) {
@@ -745,7 +751,7 @@
             const token = document.getElementById('adm-token-input').value.trim();
             if(!token) { alert("Cole o token enviado pelo usuário!"); return; }
             
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            let bancoUsuarios = obterBancoUsuarios();
             const email = Object.keys(bancoUsuarios).find(k => bancoUsuarios[k].codigo === token);
             
             if(email) {
@@ -774,7 +780,6 @@
             }
         }
 
-        /* COMPONENTES DA LOJA */
         function renderizarLoja() {
             const container = document.getElementById('container-pacotes');
             container.innerHTML = "";
@@ -812,7 +817,7 @@
         function solicitarLiberacaoPix() {
             if(!pacotePendente) return;
             
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            let bancoUsuarios = obterBancoUsuarios();
             if(bancoUsuarios[usuarioLogado.login]) {
                 bancoUsuarios[usuarioLogado.login].pendente = pacotePendente.total;
                 localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
@@ -828,7 +833,7 @@
         }
 
         function solicitarSaqueMembro() {
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            let bancoUsuarios = obterBancoUsuarios();
             const d = bancoUsuarios[usuarioLogado.login];
             
             if(!d || d.saldo <= 0) { alert("Você não possui saldo em créditos para realizar saques!"); return; }
@@ -852,7 +857,7 @@
         function membroDeletarPropriaConta() {
             if(!confirm("⚠️ ATENÇÃO:\nTem certeza que quer DELETAR de vez a sua conta? Todos os seus saldos de créditos e saques serão apagados imediatamente e permanentemente!")) return;
             
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            let bancoUsuarios = obterBancoUsuarios();
             if(bancoUsuarios[usuarioLogado.login]) {
                 delete bancoUsuarios[usuarioLogado.login];
                 localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
