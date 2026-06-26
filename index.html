@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxPool - Login, Administração & Pix Seguro</title>
+    <title>VoxPopuli - Login, Administração & Pix Seguro</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -86,15 +86,13 @@
 </head>
 <body>
 
-    <!-- VISÃO 0: TELA DE LOGIN / CADASTRO -->
     <div id="view-auth" class="view-section active" style="display: flex; min-height: 100vh; width: 100%;">
         <div class="auth-container">
-            <div class="auth-logo">Vox<span>Pool</span></div>
+            <div class="auth-logo">Vox<span>Populi</span></div>
             
             <h3 id="auth-titulo" style="text-align: center; margin-bottom: 20px; font-size: 16px;">Acesse sua Conta</h3>
             
             <div id="auth-forms">
-                <!-- Campos Dinâmicos de Cadastro (Escondidos por padrão no Login) -->
                 <div class="form-group campo-cadastro" style="display: none;">
                     <label>Nome Completo</label>
                     <input type="text" id="auth-nome" class="form-control" placeholder="Seu nome completo">
@@ -134,11 +132,10 @@
         </div>
     </div>
 
-    <!-- ESTRUTURA DO SITE PRINCIPAL -->
     <div id="app-conteudo" style="display: none; flex-direction: column; min-height: 100vh;">
         <nav>
             <div class="nav-container">
-                <div class="logo" onclick="navegarPara('view-enquetes')">Vox<span>Pool</span></div>
+                <div class="logo" onclick="navegarPara('view-enquetes')">Vox<span>Populi</span></div>
                 <div class="menu-direita">
                     <div class="member-badge" id="badge-codigo-membro" style="display:none;">ID: -</div>
                     <div class="wallet-badge">🪙 <span id="saldo-atual">0</span> Crd.</div>
@@ -149,10 +146,8 @@
         </nav>
 
         <main>
-            <!-- ÁREA EXCLUSIVA DO ADMINISTRADOR -->
             <div id="painel-adm" style="display: none;">
                 
-                <!-- Bloco 1: Validação de Tokens Rápidos -->
                 <div class="adm-box" style="border-color: rgba(16, 185, 129, 0.3);">
                     <div class="adm-section-title" style="color: var(--accent-green)">🛡️ 1. Aprovação por Token (WhatsApp)</div>
                     <div class="adm-validation-zone" style="display: flex; gap: 10px;">
@@ -161,7 +156,6 @@
                     </div>
                 </div>
 
-                <!-- Bloco 2: Criador / Editor de Enquetes Ativas -->
                 <div class="adm-box" style="border-color: rgba(59, 130, 246, 0.3);">
                     <div class="adm-section-title">📝 2. Publicar Nova Enquete Ativa</div>
                     <div class="form-group" style="margin-bottom: 10px;">
@@ -175,7 +169,6 @@
                     <button class="btn-action" style="margin-top: 12px; background: var(--accent-blue);" onclick="admAtualizarEnquete()">⚡ Inserir e Atualizar Enquete no Site</button>
                 </div>
 
-                <!-- Bloco 3: Controle e Correção Manual de Membros por Código -->
                 <div class="adm-box" style="border-color: rgba(245, 158, 11, 0.3);" id="modulo-correcao-membro">
                     <div class="adm-section-title" style="color: #f59e0b;">⚙️ 3. Modificar Membro Selecionado</div>
                     <div class="adm-row">
@@ -191,7 +184,6 @@
                     <button class="btn-action" style="margin-top: 12px; background: #d97706;" onclick="admAjustarMembroManual()">Salvar Atualizações do Cliente</button>
                 </div>
 
-                <!-- BLOCO 4: LISTA DE MEMBROS CADASTRADOS -->
                 <div class="adm-box" style="border-color: rgba(255, 255, 255, 0.15);">
                     <div class="adm-section-title" style="color: #f3f4f6;">👥 4. Lista Completa de Membros Registrados</div>
                     <p style="font-size:12px; color:var(--text-muted); margin-bottom: 8px;">Clique em "Gerenciar" para ver todos os dados completos do membro e realizar ajustes de saldo.</p>
@@ -212,17 +204,14 @@
                                 </tr>
                             </thead>
                             <tbody id="adm-tabela-membros-corpo">
-                                <!-- Preenchido dinamicamente via JS -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Botão de Reset Absoluto -->
                 <button class="btn-nav" style="background: var(--accent-red); margin-bottom: 24px; width: 100%; border: none; font-weight: 700; padding: 14px;" onclick="admZerarTudo()">⚠️ ZERAR CRÉDITOS DE TODAS AS CONTAS E ENQUETES</button>
             </div>
 
-            <!-- VISÃO 1: ENQUETE -->
             <section id="view-enquetes" class="view-section">
                 <div class="titulo-secao">
                     <span>Enquete Ativa</span>
@@ -253,7 +242,6 @@
                 </div>
             </section>
 
-            <!-- VISÃO 2: LOJA -->
             <section id="view-loja" class="view-section">
                 <div class="titulo-secao">
                     <button class="btn-nav" onclick="navegarPara('view-enquetes')">← Voltar</button>
@@ -264,7 +252,6 @@
         </main>
     </div>
 
-    <!-- MODAL DE CHECKOUT PIX -->
     <div id="modal-pix" class="pix-modal">
         <div class="pix-modal-content">
             <h3 style="color: white; font-weight: 800;">Pagamento via Pix</h3>
@@ -302,8 +289,8 @@
 
         const appState = {
             saldoCreditos: 0,
-            votos: JSON.parse(localStorage.getItem('voxpool_votos')) || { opt1: 0, opt2: 0, opt3: 0 },
-            estruturaEnquete: JSON.parse(localStorage.getItem('voxpool_estrutura_enquete')) || enquetePadrao,
+            votos: JSON.parse(localStorage.getItem('voxpopuli_votos')) || { opt1: 0, opt2: 0, opt3: 0 },
+            estruturaEnquete: JSON.parse(localStorage.getItem('voxpopuli_estrutura_enquete')) || enquetePadrao,
             opcaoSelecionada: null,
             jaVotou: false
         };
@@ -347,7 +334,7 @@
                 return;
             }
 
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpool_usuarios') || "{}");
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
 
             if(modoAuth === "CADASTRO") {
                 const nomeInput = document.getElementById('auth-nome').value.trim();
@@ -375,7 +362,7 @@
                     codigo: codigoGerado
                 };
                 
-                localStorage.setItem('voxpool_usuarios', JSON.stringify(bancoUsuarios));
+                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
                 alert(`Cadastro concluído com sucesso!\nSeu Código de Membro é: ${codigoGerado}\n\nUse seu E-mail e Senha para logar.`);
                 
                 document.getElementById('auth-nome').value = '';
@@ -417,7 +404,7 @@
                 badgeCod.innerText = `ID: ${usuarioLogado.codigo}`;
                 badgeCod.style.display = 'block';
                 
-                let bancoUsuarios = JSON.parse(localStorage.getItem('voxpool_usuarios') || "{}");
+                let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
                 if(bancoUsuarios[usuarioLogado.login] && bancoUsuarios[usuarioLogado.login].pendente > 0) {
                     document.getElementById('badge-pendente').style.display = 'block';
                 }
@@ -447,7 +434,7 @@
             const corpoTabela = document.getElementById('adm-tabela-membros-corpo');
             corpoTabela.innerHTML = '';
             
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpool_usuarios') || "{}");
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
             const chaves = Object.keys(bancoUsuarios);
             
             if(chaves.length === 0) {
@@ -501,10 +488,10 @@
             }
 
             appState.estruturaEnquete = { pergunta: novaPerg, opt1: o1, opt2: o2, opt3: o3 };
-            localStorage.setItem('voxpool_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
+            localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
 
             appState.votos = { opt1: 0, opt2: 0, opt3: 0 };
-            localStorage.setItem('voxpool_votos', JSON.stringify(appState.votos));
+            localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
 
             document.getElementById('adm-poll-pergunta').value = '';
             document.getElementById('adm-poll-opt1').value = '';
@@ -524,7 +511,7 @@
                 return;
             }
 
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpool_usuarios') || "{}");
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
             let usuarioEncontradoChave = null;
 
             for(let chave in bancoUsuarios) {
@@ -537,13 +524,13 @@
             if(usuarioEncontradoChave) {
                 bancoUsuarios[usuarioEncontradoChave].saldo = parseInt(novoSaldoVal);
                 bancoUsuarios[usuarioEncontradoChave].pendente = 0; 
-                localStorage.setItem('voxpool_usuarios', JSON.stringify(bancoUsuarios));
+                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
                 
                 document.getElementById('adm-membro-codigo').value = '';
                 document.getElementById('adm-membro-novo-saldo').value = '';
                 
                 admAtualizarTabelaMembros();
-                alert(`⚙️ Conta de "${bancoUsuarios[usuarioEncontradoChave].nome}" updated com sucesso para ${novoSaldoVal} créditos.`);
+                alert(`⚙️ Conta de "${bancoUsuarios[usuarioEncontradoChave].nome}" updated successfully to ${novoSaldoVal} credits.`);
             } else {
                 alert("⚠️ Nenhum membro encontrado com o ID informado!");
             }
@@ -570,9 +557,9 @@
 
             const tokenSeguranca = btoa(`${usuarioLogado.login}|${pacotePendente.qtd}|${pacotePendente.hora}`).replace(/=/g, '');
 
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpool_usuarios') || "{}");
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
             bancoUsuarios[usuarioLogado.login].pendente = pacotePendente.qtd;
-            localStorage.setItem('voxpool_usuarios', JSON.stringify(bancoUsuarios));
+            localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
 
             document.getElementById('badge-pendente').style.display = 'block';
 
@@ -600,12 +587,12 @@
                 const [usuarioAlvo, creditosAString, horaPedido] = decodificado.split('|');
                 const qtdCreditos = parseInt(creditosAString);
 
-                let bancoUsuarios = JSON.parse(localStorage.getItem('voxpool_usuarios') || "{}");
+                let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
 
                 if(bancoUsuarios[usuarioAlvo]) {
                     bancoUsuarios[usuarioAlvo].saldo += qtdCreditos;
                     bancoUsuarios[usuarioAlvo].pendente = 0;
-                    localStorage.setItem('voxpool_usuarios', JSON.stringify(bancoUsuarios));
+                    localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
 
                     admAtualizarTabelaMembros();
                     alert(`✅ SUCESSO!\nUsuário: ${bancoUsuarios[usuarioAlvo].nome}\nCréditos: +${qtdCreditos} liberados.`);
@@ -622,17 +609,17 @@
             if(!confirm("Deseja zerar COMPLETAMENTE todas as contas, votos e retornar para a enquete padrão?")) return;
 
             appState.votos = { opt1: 0, opt2: 0, opt3: 0 };
-            localStorage.setItem('voxpool_votos', JSON.stringify(appState.votos));
+            localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
             
             appState.estruturaEnquete = enquetePadrao;
-            localStorage.setItem('voxpool_estrutura_enquete', JSON.stringify(enquetePadrao));
+            localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(enquetePadrao));
 
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpool_usuarios') || "{}");
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
             for (let usuario in bancoUsuarios) {
                 bancoUsuarios[usuario].saldo = 0;
                 bancoUsuarios[usuario].pendente = 0;
             }
-            localStorage.setItem('voxpool_usuarios', JSON.stringify(bancoUsuarios));
+            localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
 
             appState.saldoCreditos = 0;
             appState.jaVotou = false;
@@ -648,7 +635,6 @@
             document.getElementById('texto-opt2').innerText = appState.estruturaEnquete.opt2;
             document.getElementById('texto-opt3').innerText = appState.estruturaEnquete.opt3;
 
-            // CORREÇÃO AQUI: Cada voto agora soma exatamente R$ 5,00 no prêmio total acumulado
             const totalVotos = appState.votos.opt1 + appState.votos.opt2 + appState.votos.opt3;
             const valorEmJogo = totalVotos * 5.00;
             
@@ -657,7 +643,6 @@
             document.getElementById('votos-opt2').innerText = `${appState.votos.opt2} votos`;
             document.getElementById('votos-opt3').innerText = `${appState.votos.opt3} votos`;
             
-            // Exibe corretamente o saldo real de créditos do usuário logado na carteira
             document.getElementById('saldo-atual').innerText = appState.saldoCreditos;
         }
 
@@ -672,16 +657,16 @@
             if (!appState.opcaoSelecionada) { alert("Selecione uma opção!"); return; }
             if (appState.saldoCreditos < 1) { alert("Saldo insuficiente! Vá até a Loja."); navegarPara('view-loja'); return; }
 
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpool_usuarios') || "{}");
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
             
             appState.saldoCreditos -= 1;
             if(bancoUsuarios[usuarioLogado.login]) {
                 bancoUsuarios[usuarioLogado.login].saldo = appState.saldoCreditos;
-                localStorage.setItem('voxpool_usuarios', JSON.stringify(bancoUsuarios));
+                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
             }
 
             appState.votos[appState.opcaoSelecionada] += 1;
-            localStorage.setItem('voxpool_votos', JSON.stringify(appState.votos));
+            localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
             
             appState.jaVotou = true;
             document.getElementById('btn-votar').disabled = true;
