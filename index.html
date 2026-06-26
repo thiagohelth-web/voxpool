@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxPopuli - Painel Completo com Cronômetro</title>
+    <title>VoxPopuli - Painel Completo com Controle de Tempo</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -168,13 +168,25 @@
                         <div class="form-group"><input type="text" id="adm-poll-opt3" class="form-control" placeholder="Opção 3"></div>
                     </div>
                     
-                    <!-- Novo campo de tempo -->
                     <div class="form-group" style="margin-top: 10px;">
                         <label style="color: var(--accent-blue); font-weight: 600;">Tempo de Duração da Enquete (em minutos):</label>
                         <input type="number" id="adm-poll-tempo" class="form-control" placeholder="Ex: 60 (para 1 hora), 1440 (para 24 horas)" min="1">
                     </div>
                     
                     <button class="btn-action" style="margin-top: 12px; background: var(--accent-blue);" onclick="admAtualizarEnquete()">⚡ Inserir e Iniciar Cronômetro da Enquete</button>
+                </div>
+
+                <!-- NOVO Bloco 2.1: Modificar / Zerar o Tempo em Tempo Real -->
+                <div class="adm-box" style="border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.02);">
+                    <div class="adm-section-title" style="color: var(--accent-red)">⏱️ 2.1 Controle de Tempo da Enquete Ativa</div>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Gerencie o prazo da enquete que está rodando agora sem alterar a pergunta.</p>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="number" id="adm-ajuste-tempo-minutos" class="form-control" placeholder="Novos minutos para expirar... Ex: 30" min="1">
+                        <button class="btn-action" style="width: auto; padding: 0 16px; background: #2563eb; white-space: nowrap; font-size: 13px;" onclick="admAlterarMinutosEnquete()">Atualizar Minutos</button>
+                    </div>
+                    
+                    <button class="btn-action" style="background: var(--accent-red); padding: 12px; font-size: 14px;" onclick="admZerarTempoEnquete()">🚨 Zerar Tempo (Encerrar Enquete Imediatamente)</button>
                 </div>
 
                 <!-- Bloco 3: Controle e Correção Manual de Membros por Código -->
@@ -229,7 +241,7 @@
                 </div>
 
                 <!-- RELÓGIO CRONÔMETRO DIGITAL VISÍVEL PARA MEMBROS E ADM -->
-                <div class="timer-box id="cronometro-container" class="timer-box active-timer">
+                <div id="cronometro-container" class="timer-box active-timer">
                     ⏱️ PRAZO RESTANTE: <span id="label-cronometro">00:00:00</span>
                 </div>
 
@@ -308,7 +320,7 @@
         const enquetePadrao = {
             pergunta: "Quem possui a maior torcida engajada e ativa no cenário nacional atual?",
             opt1: "BOLSONARO", opt2: "LULA", opt3: "NENHUM DELES",
-            finalizaEm: Date.now() + (60 * 60 * 1000) // 1 hora padrão inicial
+            finalizaEm: Date.now() + (60 * 60 * 1000)
         };
 
         const appState = {
@@ -458,23 +470,59 @@
                     document.getElementById('btn-votar').disabled = true;
                     document.getElementById('btn-votar').innerText = "Enquete Finalizada e Paga!";
                     appState.enqueteEncerrada = true;
-                    if(boxRelogio) boxRelogio.style.borderColor = "#ef4444";
+                    if(boxRelogio) {
+                        boxRelogio.style.borderColor = "#ef4444";
+                        boxRelogio.classList.remove('active-timer');
+                    }
                     return;
                 }
 
                 appState.enqueteEncerrada = false;
+                if(boxRelogio) {
+                    boxRelogio.style.borderColor = "var(--accent-green)";
+                    boxRelogio.classList.add('active-timer');
+                }
 
-                // Cálculos do tempo padrão (Horas, minutos, segundos)
                 const horas = Math.floor(tempoRestante / (1000 * 60 * 60));
                 const minutos = Math.floor((tempoRestante % (1000 * 60 * 60)) / (1000 * 60));
                 const segundos = Math.floor((tempoRestante % (1000 * 60)) / 1000);
 
                 const hDisplay = horas < 10 ? "0" + horas : horas;
-                const mDisplay = minutos < 10 ? "0" + minutos : minutos;
+                const mDisplay = minutes = minutos < 10 ? "0" + minutos : minutos;
                 const sDisplay = segundos < 10 ? "0" + segundos : segundos;
 
                 labelRelogio.innerText = `${hDisplay}:${mDisplay}:${sDisplay}`;
             }, 1000);
+        }
+
+        /* FUNÇÕES ADM DE ATUALIZAÇÃO DO CRONÔMETRO */
+        function admAlterarMinutosEnquete() {
+            const novosMinutos = parseInt(document.getElementById('adm-ajuste-tempo-minutos').value.trim());
+            
+            if(isNaN(novosMinutos) || novosMinutos <= 0) {
+                alert("Insira uma quantidade de minutos válida!");
+                return;
+            }
+
+            // Redefine o vencimento com base no momento atual
+            appState.estruturaEnquete.finalizaEm = Date.now() + (novosMinutos * 60 * 1000);
+            localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
+            
+            // Se o botão de votação estava travado, reativa ele
+            document.getElementById('btn-votar').disabled = false;
+            document.getElementById('btn-votar').innerText = "Confirmar Voto (1 Crédito)";
+
+            document.getElementById('adm-ajuste-tempo-minutos').value = '';
+            inicializarCronometro();
+            alert(`✅ Tempo atualizado! Restam agora ${novosMinutos} minutos para finalizar.`);
+        }
+
+        function admZerarTempoEnquete() {
+            if(confirm("Tem certeza que deseja ZERAR o cronômetro? Isso encerrará as apostas imediatamente para todos os membros.")) {
+                appState.estruturaEnquete.finalizaEm = Date.now(); // Joga o fim para o momento atual exacto
+                localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
+                inicializarCronometro();
+            }
         }
 
         function admAtualizarEnquete() {
@@ -482,15 +530,14 @@
             const o1 = document.getElementById('adm-poll-opt1').value.trim();
             const o2 = document.getElementById('adm-poll-opt2').value.trim();
             const o3 = document.getElementById('adm-poll-opt3').value.trim();
-            const minutosDuração = parseInt(document.getElementById('adm-poll-tempo').value.trim());
+            const minutosDuracao = parseInt(document.getElementById('adm-poll-tempo').value.trim());
 
-            if(!novaPerg || !o1 || !o2 || !o3 || isNaN(minutosDuração) || minutosDuração <= 0) {
+            if(!novaPerg || !o1 || !o2 || !o3 || isNaN(minutosDuracao) || minutosDuracao <= 0) {
                 alert("Por favor, preencha a pergunta, as 3 opções e insira um tempo válido em minutos!");
                 return;
             }
 
-            // Calcula o momento exato do futuro em milissegundos que a enquete expira
-            const timestampFinal = Date.now() + (minutosDuração * 60 * 1000);
+            const timestampFinal = Date.now() + (minutosDuracao * 60 * 1000);
 
             appState.estruturaEnquete = { 
                 pergunta: novaPerg, opt1: o1, opt2: o2, opt3: o3, 
