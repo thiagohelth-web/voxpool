@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxPopuli - Painel Completo</title>
+    <title>VoxPopuli - Painel Completo com Cronômetro</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -65,9 +65,14 @@
         .titulo-secao { font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
 
         /* CARDS */
-        .poll-card { background: var(--bg-card); border-radius: 24px; border: 1px solid var(--border-color); padding: 24px; }
+        .poll-card { background: var(--bg-card); border-radius: 24px; border: 1px solid var(--border-color); padding: 24px; position: relative; }
         .prize-pool-box { background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); border: 1px solid var(--accent-blue); border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 24px; }
         .prize-value { font-size: 36px; font-weight: 800; color: #ffffff; text-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
+        
+        /* CRONÔMETRO ESTILO DIGITAL */
+        .timer-box { background: #000; border: 2px solid #ef4444; border-radius: 12px; padding: 10px; text-align: center; margin-bottom: 20px; font-family: monospace; font-size: 22px; font-weight: bold; color: #ef4444; letter-spacing: 2px; box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.3); }
+        .timer-box.active-timer { border-color: var(--accent-green); color: var(--accent-green); box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.3); }
+
         .options-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
         .option-label { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
         .option-label.selected { border-color: var(--accent-blue); background: rgba(59, 130, 246, 0.1); }
@@ -90,42 +95,33 @@
     <div id="view-auth" class="view-section active" style="display: flex; min-height: 100vh; width: 100%;">
         <div class="auth-container">
             <div class="auth-logo">Vox<span>Populi</span></div>
-            
             <h3 id="auth-titulo" style="text-align: center; margin-bottom: 20px; font-size: 16px;">Acesse sua Conta</h3>
-            
             <div id="auth-forms">
                 <div class="form-group campo-cadastro" style="display: none;">
                     <label>Nome Completo</label>
                     <input type="text" id="auth-nome" class="form-control" placeholder="Seu nome completo">
                 </div>
-
                 <div class="form-group">
                     <label id="label-login-email">E-mail</label>
                     <input type="email" id="auth-email" class="form-control" placeholder="Ex: seuemail@dominio.com">
                 </div>
-
                 <div class="form-group campo-cadastro" style="display: none;">
                     <label>WhatsApp</label>
                     <input type="text" id="auth-whatsapp" class="form-control" placeholder="Ex: (22) 99999-9999">
                 </div>
-
                 <div class="form-group campo-cadastro" style="display: none;">
                     <label>CPF</label>
                     <input type="text" id="auth-cpf" class="form-control" placeholder="000.000.000-00">
                 </div>
-
                 <div class="form-group campo-cadastro" style="display: none;">
                     <label>Chave Pix para Recebimento</label>
                     <input type="text" id="auth-chavepix" class="form-control" placeholder="CPF, Celular, E-mail ou Aleatória">
                 </div>
-
                 <div class="form-group">
                     <label>Senha</label>
                     <input type="password" id="auth-senha" class="form-control" placeholder="••••••••">
                 </div>
-
                 <button class="btn-action" style="margin-top: 10px;" id="btn-auth-principal" onclick="executarAutenticacao()">Entrar na Conta</button>
-                
                 <div class="auth-switch" id="btn-alternar-auth">
                     Não tem conta? <span onclick="alternarModoAuth()">Cadastre-se aqui</span>
                 </div>
@@ -160,7 +156,7 @@
                     </div>
                 </div>
 
-                <!-- Bloco 2: Criador / Editor de Enquetes Ativas -->
+                <!-- Bloco 2: Criador / Editor de Enquetes Ativas com Cronômetro -->
                 <div class="adm-box" style="border-color: rgba(59, 130, 246, 0.3);">
                     <div class="adm-section-title">📝 2. Publicar Nova Enquete Ativa</div>
                     <div class="form-group" style="margin-bottom: 10px;">
@@ -171,7 +167,14 @@
                         <div class="form-group"><input type="text" id="adm-poll-opt2" class="form-control" placeholder="Opção 2"></div>
                         <div class="form-group"><input type="text" id="adm-poll-opt3" class="form-control" placeholder="Opção 3"></div>
                     </div>
-                    <button class="btn-action" style="margin-top: 12px; background: var(--accent-blue);" onclick="admAtualizarEnquete()">⚡ Inserir e Atualizar Enquete no Site</button>
+                    
+                    <!-- Novo campo de tempo -->
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label style="color: var(--accent-blue); font-weight: 600;">Tempo de Duração da Enquete (em minutos):</label>
+                        <input type="number" id="adm-poll-tempo" class="form-control" placeholder="Ex: 60 (para 1 hora), 1440 (para 24 horas)" min="1">
+                    </div>
+                    
+                    <button class="btn-action" style="margin-top: 12px; background: var(--accent-blue);" onclick="admAtualizarEnquete()">⚡ Inserir e Iniciar Cronômetro da Enquete</button>
                 </div>
 
                 <!-- Bloco 3: Controle e Correção Manual de Membros por Código -->
@@ -193,8 +196,6 @@
                 <!-- BLOCO 4: LISTA DE MEMBROS CADASTRADOS -->
                 <div class="adm-box" style="border-color: rgba(255, 255, 255, 0.15);">
                     <div class="adm-section-title" style="color: #f3f4f6;">👥 4. Lista Completa de Membros Registrados</div>
-                    <p style="font-size:12px; color:var(--text-muted); margin-bottom: 8px;">Gerencie saldos ou delete membros de forma definitiva.</p>
-                    
                     <div class="table-container">
                         <table>
                             <thead>
@@ -211,9 +212,7 @@
                                     <th>Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="adm-tabela-membros-corpo">
-                                <!-- Preenchido dinamicamente -->
-                            </tbody>
+                            <tbody id="adm-tabela-membros-corpo"></tbody>
                         </table>
                     </div>
                 </div>
@@ -224,9 +223,14 @@
                 <div class="titulo-secao">
                     <span>Enquete Ativa</span>
                     <div style="text-align: right;">
-                        <span id="badge-pendente" style="font-size: 11px; color: #f59e0b; font-weight: 600; display: none; block-size: auto;">⏳ Depósito aguardando aprovação...</span>
-                        <span id="badge-saque-pendente" style="font-size: 11px; color: #3b82f6; font-weight: 600; display: none; block-size: auto;">⏱️ Saque em processamento...</span>
+                        <span id="badge-pendente" style="font-size: 11px; color: #f59e0b; font-weight: 600; display: none;">⏳ Depósito aguardando aprovação...</span>
+                        <span id="badge-saque-pendente" style="font-size: 11px; color: #3b82f6; font-weight: 600; display: none;">⏱️ Saque em processamento...</span>
                     </div>
+                </div>
+
+                <!-- RELÓGIO CRONÔMETRO DIGITAL VISÍVEL PARA MEMBROS E ADM -->
+                <div class="timer-box id="cronometro-container" class="timer-box active-timer">
+                    ⏱️ PRAZO RESTANTE: <span id="label-cronometro">00:00:00</span>
                 </div>
 
                 <div class="poll-card">
@@ -260,8 +264,7 @@
                             </div>
                             <button class="btn-nav" style="background:var(--accent-green); color:white; border:none;" onclick="solicitarSaqueMembro()">💸 Sacar Saldo</button>
                         </div>
-                        
-                        <button class="btn-nav" style="background:transparent; color:var(--accent-red); border:1px solid rgba(239,68,68,0.2); width:100%; padding:10px; border-radius:12px; margin-top:10px;" onclick="membroDeletarPropriaConta()">⚠️ Excluir Minha Conta da Plataforma</button>
+                        <button class="btn-nav" style="background:transparent; color:var(--accent-red); border:1px solid rgba(239,68,68,0.2); width:100%; padding:10px; border-radius:12px; margin-top:10px;" onclick="membroDeletarPropriaConta()">⚠️ Excluir My Account</button>
                     </div>
                 </div>
             </section>
@@ -283,7 +286,6 @@
             <h3 style="color: white; font-weight: 800;">Pagamento via Pix</h3>
             <p style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">Transfira o valor exato para a nossa chave:</p>
             <div class="pix-key-box">tssnbshrs@gmail.com</div>
-            
             <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; border: 1px solid var(--border-color); text-align: left;">
                 <div style="display:flex; justify-content: space-between; margin-bottom: 4px;">
                     <span>Pacote:</span><span id="modal-info-qtd" style="font-weight:700;">-</span>
@@ -291,14 +293,8 @@
                 <div style="display:flex; justify-content: space-between; color: var(--accent-green); margin-bottom: 4px;">
                     <span>Valor:</span><span id="modal-info-preco" style="font-weight:700;">-</span>
                 </div>
-                <div style="display:flex; justify-content: space-between; color: var(--text-muted); font-size: 11px;">
-                    <span>Hora do Pedido:</span><span id="modal-info-hora">-</span>
-                </div>
             </div>
-            
-            <button class="btn-action" style="background: var(--accent-green);" onclick="solicitarLiberacaoPix()">
-                📱 Notificar Pagamento no WhatsApp
-            </button>
+            <button class="btn-action" style="background: var(--accent-green);" onclick="solicitarLiberacaoPix()">📱 Notificar Pagamento no WhatsApp</button>
             <button class="btn-nav" style="margin-top: 12px; width: 100%; border: none;" onclick="fecharModalPix()">Cancelar</button>
         </div>
     </div>
@@ -307,10 +303,12 @@
         let modoAuth = "LOGIN";
         let usuarioLogado = null;
         let pacotePendente = null;
+        let intervaloCronometro = null;
 
         const enquetePadrao = {
             pergunta: "Quem possui a maior torcida engajada e ativa no cenário nacional atual?",
-            opt1: "BOLSONARO", opt2: "LULA", opt3: "NENHUM DELES"
+            opt1: "BOLSONARO", opt2: "LULA", opt3: "NENHUM DELES",
+            finalizaEm: Date.now() + (60 * 60 * 1000) // 1 hora padrão inicial
         };
 
         const appState = {
@@ -318,7 +316,8 @@
             votos: JSON.parse(localStorage.getItem('voxpopuli_votos')) || { opt1: 0, opt2: 0, opt3: 0 },
             estruturaEnquete: JSON.parse(localStorage.getItem('voxpopuli_estrutura_enquete')) || enquetePadrao,
             opcaoSelecionada: null,
-            jaVotou: false
+            jaVotou: false,
+            enqueteEncerrada: false
         };
 
         const pacotesMoedas = [
@@ -374,33 +373,21 @@
                 }
 
                 if(bancoUsuarios[emailInput]) { alert("Este e-mail já está cadastrado!"); return; }
-                
                 const codigoGerado = `M-${Math.floor(1000 + Math.random() * 9000)}`;
                 
                 bancoUsuarios[emailInput] = { 
-                    nome: nomeInput,
-                    whatsapp: whatsappInput,
-                    cpf: cpfInput,
-                    chavePix: chavePixInput,
-                    senha: senhaInput, 
-                    saldo: 0, 
-                    pendente: 0,
-                    saquePendente: 0,
-                    codigo: codigoGerado
+                    nome: nomeInput, whatsapp: whatsappInput, cpf: cpfInput, chavePix: chavePixInput,
+                    senha: senhaInput, saldo: 0, pendente: 0, saquePendente: 0, codigo: codigoGerado
                 };
                 
                 localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-                alert(`Cadastro concluído com sucesso!\nSeu Código de Membro é: ${codigoGerado}`);
-                
+                alert(`Cadastro concluído com sucesso!\nSeu ID: ${codigoGerado}`);
                 alternarModoAuth();
             } else {
                 if(bancoUsuarios[emailInput] && bancoUsuarios[emailInput].senha === senhaInput) {
                     usuarioLogado = { 
-                        login: emailInput, 
-                        email: emailInput,
-                        role: "USER", 
-                        nome: bancoUsuarios[emailInput].nome || "Membro",
-                        codigo: bancoUsuarios[emailInput].codigo || "M-Def"
+                        login: emailInput, email: emailInput, role: "USER", 
+                        nome: bancoUsuarios[emailInput].nome || "Membro", codigo: bancoUsuarios[emailInput].codigo || "M-Def"
                     };
                     appState.saldoCreditos = bancoUsuarios[emailInput].saldo || 0;
                     logarSucesso();
@@ -418,9 +405,7 @@
             document.getElementById('painel-adm').style.display = isAdm ? 'block' : 'none';
             document.getElementById('financeiro-membro-box').style.display = isAdm ? 'none' : 'block';
             
-            if(isAdm) {
-                admAtualizarTabelaMembros();
-            }
+            if(isAdm) { admAtualizarTabelaMembros(); }
             
             const badgeCod = document.getElementById('badge-codigo-membro');
             if(!isAdm) {
@@ -446,52 +431,119 @@
 
             navegarPara('view-enquetes');
             atualizarPainelPremio();
+            inicializarCronometro();
         }
 
         function fazerLogout() {
+            clearInterval(intervaloCronometro);
             usuarioLogado = null;
-            document.getElementById('auth-email').value = '';
-            document.getElementById('auth-senha').value = '';
             document.getElementById('app-conteudo').style.display = 'none';
             document.getElementById('view-auth').style.display = 'flex';
+        }
+
+        /* SISTEMA DO CRONÔMETRO DIGITAL */
+        function inicializarCronometro() {
+            clearInterval(intervaloCronometro);
+            
+            const labelRelogio = document.getElementById('label-cronometro');
+            const boxRelogio = document.getElementById('cronometro-container');
+
+            intervaloCronometro = setInterval(() => {
+                const agora = Date.now();
+                const tempoRestante = appState.estruturaEnquete.finalizaEm - agora;
+
+                if (tempoRestante <= 0) {
+                    clearInterval(intervaloCronometro);
+                    labelRelogio.innerText = "00:00:00 - ENCERRADA";
+                    document.getElementById('btn-votar').disabled = true;
+                    document.getElementById('btn-votar').innerText = "Enquete Finalizada e Paga!";
+                    appState.enqueteEncerrada = true;
+                    if(boxRelogio) boxRelogio.style.borderColor = "#ef4444";
+                    return;
+                }
+
+                appState.enqueteEncerrada = false;
+
+                // Cálculos do tempo padrão (Horas, minutos, segundos)
+                const horas = Math.floor(tempoRestante / (1000 * 60 * 60));
+                const minutos = Math.floor((tempoRestante % (1000 * 60 * 60)) / (1000 * 60));
+                const segundos = Math.floor((tempoRestante % (1000 * 60)) / 1000);
+
+                const hDisplay = horas < 10 ? "0" + horas : horas;
+                const mDisplay = minutos < 10 ? "0" + minutos : minutos;
+                const sDisplay = segundos < 10 ? "0" + segundos : segundos;
+
+                labelRelogio.innerText = `${hDisplay}:${mDisplay}:${sDisplay}`;
+            }, 1000);
+        }
+
+        function admAtualizarEnquete() {
+            const novaPerg = document.getElementById('adm-poll-pergunta').value.trim();
+            const o1 = document.getElementById('adm-poll-opt1').value.trim();
+            const o2 = document.getElementById('adm-poll-opt2').value.trim();
+            const o3 = document.getElementById('adm-poll-opt3').value.trim();
+            const minutosDuração = parseInt(document.getElementById('adm-poll-tempo').value.trim());
+
+            if(!novaPerg || !o1 || !o2 || !o3 || isNaN(minutosDuração) || minutosDuração <= 0) {
+                alert("Por favor, preencha a pergunta, as 3 opções e insira um tempo válido em minutos!");
+                return;
+            }
+
+            // Calcula o momento exato do futuro em milissegundos que a enquete expira
+            const timestampFinal = Date.now() + (minutosDuração * 60 * 1000);
+
+            appState.estruturaEnquete = { 
+                pergunta: novaPerg, opt1: o1, opt2: o2, opt3: o3, 
+                finalizaEm: timestampFinal 
+            };
+            
+            localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
+
+            appState.votos = { opt1: 0, opt2: 0, opt3: 0 };
+            localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
+
+            appState.jaVotou = false;
+            document.getElementById('btn-votar').disabled = false;
+            document.getElementById('btn-votar').innerText = "Confirmar Voto (1 Crédito)";
+            document.querySelectorAll('.option-label').forEach(el => el.classList.remove('selected'));
+
+            document.getElementById('adm-poll-pergunta').value = '';
+            document.getElementById('adm-poll-opt1').value = '';
+            document.getElementById('adm-poll-opt2').value = '';
+            document.getElementById('adm-poll-opt3').value = '';
+            document.getElementById('adm-poll-tempo').value = '';
+
+            atualizarPainelPremio();
+            inicializarCronometro();
+            alert("✅ Nova enquete publicada e relógio iniciado em tempo real!");
         }
 
         function admAtualizarTabelaMembros() {
             const corpoTabela = document.getElementById('adm-tabela-membros-corpo');
             corpoTabela.innerHTML = '';
-            
             let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
             const chaves = Object.keys(bancoUsuarios);
             
             if(chaves.length === 0) {
-                corpoTabela.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted);">Nenhum membro cadastrado até o momento.</td></tr>`;
+                corpoTabela.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted);">Nenhum membro cadastrado.</td></tr>`;
                 return;
             }
 
             chaves.forEach(emailChave => {
                 const dados = bancoUsuarios[emailChave];
-                const cod = dados.codigo || 'Não definido';
-                const nome = dados.nome || '-';
-                const whatsapp = dados.whatsapp || '-';
-                const cpf = dados.cpf || '-';
-                const pix = dados.chavePix || '-';
-                const sal = dados.saldo || 0;
-                const pend = dados.pendente || 0;
-                const saqPend = dados.saquePendente || 0;
-
                 corpoTabela.innerHTML += `
                     <tr>
-                        <td style="color:var(--accent-blue); font-family:monospace; font-weight:700;">${cod}</td>
-                        <td style="font-weight:600; color:#fff;">${nome}</td>
+                        <td style="color:var(--accent-blue); font-family:monospace; font-weight:700;">${dados.codigo}</td>
+                        <td style="font-weight:600; color:#fff;">${dados.nome}</td>
                         <td>${emailChave}</td>
-                        <td>${whatsapp}</td>
-                        <td>${cpf}</td>
-                        <td style="color:var(--accent-green);">${pix}</td>
-                        <td>🪙 ${sal}</td>
-                        <td style="color:${pend > 0 ? '#f59e0b' : 'var(--text-muted)'}">${pend > 0 ? '⏳ ' + pend : '0'}</td>
-                        <td style="color:${saqPend > 0 ? '#ef4444' : 'var(--text-muted)'}">${saqPend > 0 ? '💸 ' + saqPend : '0'}</td>
+                        <td>${dados.whatsapp}</td>
+                        <td>${dados.cpf}</td>
+                        <td style="color:var(--accent-green);">${dados.chavePix}</td>
+                        <td>🪙 ${dados.saldo}</td>
+                        <td style="color:${dados.pendente > 0 ? '#f59e0b' : 'var(--text-muted)'}">${dados.pendente > 0 ? '⏳ ' + dados.pendente : '0'}</td>
+                        <td style="color:${dados.saquePendente > 0 ? '#ef4444' : 'var(--text-muted)'}">${dados.saquePendente > 0 ? '💸 ' + dados.saquePendente : '0'}</td>
                         <td>
-                            <button class="btn-table-action" onclick="admCarregarMembroParaEditar('${cod}', ${sal})">Gerenciar</button>
+                            <button class="btn-table-action" onclick="admCarregarMembroParaEditar('${dados.codigo}', ${dados.saldo})">Gerenciar</button>
                             <button class="btn-table-action danger" onclick="admDeletarMembroForcado('${emailChave}')">Excluir</button>
                         </td>
                     </tr>
@@ -507,56 +559,32 @@
 
         function admDeletarMembroForcado(emailMembro) {
             let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-            if(bancoUsuarios[emailMembro]) {
-                if(confirm(`Tem certeza absoluta que deseja EXCLUIR permanentemente o membro "${bancoUsuarios[emailMembro].nome}" da plataforma?`)){
-                    delete bancoUsuarios[emailMembro];
-                    localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-                    admAtualizarTabelaMembros();
-                    alert("Membro excluído com sucesso.");
-                }
+            if(bancoUsuarios[emailMembro] && confirm(`Deseja EXCLUIR permanentemente o membro "${bancoUsuarios[emailMembro].nome}"?`)){
+                delete bancoUsuarios[emailMembro];
+                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
+                admAtualizarTabelaMembros();
             }
         }
 
         function membroDeletarPropriaConta() {
-            if(!usuarioLogado || usuarioLogado.role === "ADM") return;
-            if(confirm("ATENÇÃO: Você deseja excluir o seu cadastro permanentemente da VoxPopuli? Todos os seus saldos serão perdidos e esta ação não pode ser desfeita!")) {
+            if(confirm("Deseja excluir seu cadastro permanentemente?")) {
                 let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-                if(bancoUsuarios[usuarioLogado.login]) {
-                    delete bancoUsuarios[usuarioLogado.login];
-                    localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-                    alert("Sua conta foi excluída com sucesso.");
-                    fazerLogout();
-                }
+                delete bancoUsuarios[usuarioLogado.login];
+                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
+                fazerLogout();
             }
         }
 
         function solicitarSaqueMembro() {
             let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
             const dadosUser = bancoUsuarios[usuarioLogado.login];
-            
-            if(!dadosUser) return;
-            
-            const saldoDisponivel = dadosUser.saldo || 0;
-            if(saldoDisponivel <= 0) {
-                alert("Você não possui saldo disponível para realizar saques!");
-                return;
-            }
+            if(!dadosUser || dadosUser.saldo <= 0) { alert("Saldo insuficiente para saques!"); return; }
 
-            const valorSaqueStr = prompt(`Quanto deseja sacar? (Disponível: ${saldoDisponivel} Créditos)\nDigite apenas o valor inteiro:`);
-            if(!valorSaqueStr) return;
-
+            const valorSaqueStr = prompt(`Quanto deseja sacar? (Disponível: ${dadosUser.saldo} Créditos):`);
             const valorSaque = parseInt(valorSaqueStr);
-            if(isNaN(valorSaque) || valorSaque <= 0) {
-                alert("Valor de saque inválido!");
-                return;
-            }
 
-            if(valorSaque > saldoDisponivel) {
-                alert("Você não tem créditos suficientes para este saque!");
-                return;
-            }
+            if(isNaN(valorSaque) || valorSaque <= 0 || valorSaque > dadosUser.saldo) { alert("Valor inválido!"); return; }
 
-            // Atualiza localmente deduzindo o saldo e colocando em pendente
             dadosUser.saldo -= valorSaque;
             dadosUser.saquePendente = (dadosUser.saquePendente || 0) + valorSaque;
             bancoUsuarios[usuarioLogado.login] = dadosUser;
@@ -567,87 +595,36 @@
             document.getElementById('badge-saque-pendente').style.display = 'inline-block';
             atualizarPainelPremio();
 
-            // Disparar Notificação ao ADM no WhatsApp
-            const mensagemSaqueZap = encodeURIComponent(
-                `⚠️ *SOLICITAÇÃO DE SAQUE - VoxPopuli*\n\n` +
-                `👤 *Membro:* ${dadosUser.nome}\n` +
-                `🆔 *ID do Membro:* ${dadosUser.codigo}\n` +
-                `📧 *E-mail:* ${usuarioLogado.login}\n` +
-                `📱 *WhatsApp:* ${dadosUser.whatsapp}\n\n` +
-                `💸 *VALOR DO SAQUE:* ${valorSaque} Créditos\n` +
-                `🔑 *CHAVE PIX DO CLIENTE:* ${dadosUser.chavePix}\n` +
-                `👤 *CPF DO TITULAR:* ${dadosUser.cpf}\n\n` +
-                `Por favor, realize a transferência para a chave acima e dê baixa no painel administrativo.`
-            );
-
-            window.open(`https://wa.me/22992777193?text=${mensagemSaqueZap}`, '_blank');
-            alert("Solicitação de saque enviada para a administração! Aguarde o processamento via Pix.");
+            const msg = encodeURIComponent(`⚠️ *SOLICITAÇÃO DE SAQUE*\n👤 Membro: ${dadosUser.nome}\n🆔 ID: ${dadosUser.codigo}\n💸 VALOR: ${valorSaque} Créditos\n🔑 PIX: ${dadosUser.chavePix}`);
+            window.open(`https://wa.me/22992777193?text=${msg}`, '_blank');
         }
 
         function admAjustarMembroManual() {
             const codProcurado = document.getElementById('adm-membro-codigo').value.trim().toUpperCase();
             const novoSaldoVal = document.getElementById('adm-membro-novo-saldo').value.trim();
-
-            if(!codProcurado || novoSaldoVal === "") {
-                alert("Selecione um membro na lista abaixo para carregar os dados!");
-                return;
-            }
+            if(!codProcurado || novoSaldoVal === "") return;
 
             let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-            let usuarioEncontradoChave = null;
-
             for(let chave in bancoUsuarios) {
                 if(bancoUsuarios[chave].codigo && bancoUsuarios[chave].codigo.toUpperCase() === codProcurado) {
-                    usuarioEncontradoChave = chave;
+                    bancoUsuarios[chave].saldo = parseInt(novoSaldoVal);
+                    bancoUsuarios[chave].saquePendente = 0;
+                    bancoUsuarios[chave].pendente = 0;
+                    localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
                     break;
                 }
             }
-
-            if(usuarioEncontradoChave) {
-                bancoUsuarios[usuarioEncontradoChave].saldo = parseInt(novoSaldoVal);
-                bancoUsuarios[usuarioEncontradoChave].saquePendente = 0; // Limpa os saques pendentes se reajustou manualmente
-                bancoUsuarios[usuarioEncontradoChave].pendente = 0; 
-                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-                
-                document.getElementById('adm-membro-codigo').value = '';
-                document.getElementById('adm-membro-novo-saldo').value = '';
-                
-                admAtualizarTabelaMembros();
-                alert(`⚙️ Conta atualizada com sucesso.`);
-            } else {
-                alert("⚠️ Nenhum membro encontrado!");
-            }
-        }
-
-        function admAtualizarEnquete() {
-            const novaPerg = document.getElementById('adm-poll-pergunta').value.trim();
-            const o1 = document.getElementById('adm-poll-opt1').value.trim();
-            const o2 = document.getElementById('adm-poll-opt2').value.trim();
-            const o3 = document.getElementById('adm-poll-opt3').value.trim();
-
-            if(!novaPerg || !o1 || !o2 || !o3) {
-                alert("Preencha todos os campos!");
-                return;
-            }
-
-            appState.estruturaEnquete = { pergunta: novaPerg, opt1: o1, opt2: o2, opt3: o3 };
-            localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
-
-            appState.votos = { opt1: 0, opt2: 0, opt3: 0 };
-            localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
-
-            atualizarPainelPremio();
-            alert("✅ Enquete publicada com sucesso!");
+            document.getElementById('adm-membro-codigo').value = '';
+            document.getElementById('adm-membro-novo-saldo').value = '';
+            admAtualizarTabelaMembros();
+            alert("Conta modificada com sucesso.");
         }
 
         function abrirCheckoutPix(qtd, total) {
             const agora = new Date();
-            const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            pacotePendente = { qtd, total, hora: horaFormatada };
-            
+            pacotePendente = { qtd, total, hora: agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) };
             document.getElementById('modal-info-qtd').innerText = `${qtd} Créditos`;
             document.getElementById('modal-info-preco').innerText = `R$ ${total.toFixed(2)}`;
-            document.getElementById('modal-info-hora').innerText = horaFormatada;
             document.getElementById('modal-pix').style.display = 'flex';
         }
 
@@ -655,43 +632,29 @@
 
         function solicitarLiberacaoPix() {
             if(!pacotePendente) return;
-            const tokenSeguranca = btoa(`${usuarioLogado.login}|${pacotePendente.qtd}|${pacotePendente.hora}`).replace(/=/g, '');
-
+            const token = btoa(`${usuarioLogado.login}|${pacotePendente.qtd}|${pacotePendente.hora}`).replace(/=/g, '');
             let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
             bancoUsuarios[usuarioLogado.login].pendente = pacotePendente.qtd;
             localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-
             document.getElementById('badge-pendente').style.display = 'inline-block';
 
-            const mensagemZap = encodeURIComponent(
-                `Olá, fiz o Pix de confirmação!\n\n` +
-                `👤 *Membro:* ${usuarioLogado.nome} (ID: ${usuarioLogado.codigo})\n` +
-                `🪙 *Créditos:* ${pacotePendente.qtd} Crd\n` +
-                `💰 *Valor:* R$ ${pacotePendente.total.toFixed(2)}\n\n` +
-                `🔑 *TOKEN RESTRITO:*\n${tokenSeguranca}`
-            );
-
-            window.open(`https://wa.me/22992777193?text=${mensagemZap}`, '_blank');
+            const msg = encodeURIComponent(`Olá, fiz o Pix!\n👤 Membro: ${usuarioLogado.nome}\n🪙 Créditos: ${pacotePendente.qtd}\n🔑 TOKEN:\n${token}`);
+            window.open(`https://wa.me/22992777193?text=${msg}`, '_blank');
             fecharModalPix();
-            navegarPara('view-enquetes');
         }
 
         function admProcessarToken() {
             const token = document.getElementById('adm-token-input').value.trim();
-            if(!token) return;
             try {
-                const decodificado = atob(token);
-                const [usuarioAlvo, creditosAString] = decodificado.split('|');
-                const qtdCreditos = parseInt(creditosAString);
-
+                const [usuarioAlvo, creditosAString] = atob(token).split('|');
                 let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
                 if(bancoUsuarios[usuarioAlvo]) {
-                    bancoUsuarios[usuarioAlvo].saldo += qtdCreditos;
+                    bancoUsuarios[usuarioAlvo].saldo += parseInt(creditosAString);
                     bancoUsuarios[usuarioAlvo].pendente = 0;
                     localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
                     admAtualizarTabelaMembros();
-                    alert("✅ Créditos liberados!");
                     document.getElementById('adm-token-input').value = '';
+                    alert("✅ Créditos aprovados!");
                 }
             } catch(e) { alert("Token inválido!"); }
         }
@@ -701,7 +664,6 @@
             document.getElementById('texto-opt1').innerText = appState.estruturaEnquete.opt1;
             document.getElementById('texto-opt2').innerText = appState.estruturaEnquete.opt2;
             document.getElementById('texto-opt3').innerText = appState.estruturaEnquete.opt3;
-
             const totalVotos = appState.votos.opt1 + appState.votos.opt2 + appState.votos.opt3;
             document.getElementById('label-premio-total').innerText = `R$ ${(totalVotos * 5).toFixed(2)}`;
             document.getElementById('votos-opt1').innerText = `${appState.votos.opt1} votos`;
@@ -711,22 +673,21 @@
         }
 
         function selecionarOpcao(idOpcao) {
-            if(appState.jaVotou) return;
+            if(appState.jaVotou || appState.enqueteEncerrada) return;
             document.querySelectorAll('.option-label').forEach(el => el.classList.remove('selected'));
             document.getElementById(`container-${idOpcao}`).classList.add('selected');
             appState.opcaoSelecionada = idOpcao;
         }
 
         function processarVoto() {
+            if(appState.enqueteEncerrada) { alert("Esta enquete já encerrou!"); return; }
             if (!appState.opcaoSelecionada) return;
             if (appState.saldoCreditos < 1) { alert("Saldo insuficiente!"); return; }
 
             let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
             appState.saldoCreditos -= 1;
-            if(bancoUsuarios[usuarioLogado.login]) {
-                bancoUsuarios[usuarioLogado.login].saldo = appState.saldoCreditos;
-                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-            }
+            bancoUsuarios[usuarioLogado.login].saldo = appState.saldoCreditos;
+            localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
 
             appState.votos[appState.opcaoSelecionada] += 1;
             localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
@@ -741,14 +702,12 @@
             const grid = document.getElementById('container-pacotes');
             grid.innerHTML = '';
             pacotesMoedas.forEach(p => {
-                grid.innerHTML += `
-                    <div class="credit-card">
-                        <div style="display:flex; justify-content:space-between; font-weight:700;">
-                            <span>${p.qtd} Créditos</span>
-                            <span>R$ ${p.total.toFixed(2)}</span>
-                        </div>
-                        <button class="btn-buy-package" onclick="abrirCheckoutPix(${p.qtd}, ${p.total})">Adquirir Pacote</button>
-                    </div>`;
+                grid.innerHTML += `<div class="credit-card">
+                    <div style="display:flex; justify-content:space-between; font-weight:700;">
+                        <span>${p.qtd} Créditos</span><span>R$ ${p.total.toFixed(2)}</span>
+                    </div>
+                    <button class="btn-buy-package" onclick="abrirCheckoutPix(${p.qtd}, ${p.total})">Adquirir Pacote</button>
+                </div>`;
             });
         }
 
