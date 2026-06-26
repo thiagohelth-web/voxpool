@@ -86,6 +86,7 @@
 </head>
 <body>
 
+    <!-- VISÃO 0: TELA DE LOGIN / CADASTRO -->
     <div id="view-auth" class="view-section active" style="display: flex; min-height: 100vh; width: 100%;">
         <div class="auth-container">
             <div class="auth-logo">Vox<span>Pool</span></div>
@@ -93,6 +94,7 @@
             <h3 id="auth-titulo" style="text-align: center; margin-bottom: 20px; font-size: 16px;">Acesse sua Conta</h3>
             
             <div id="auth-forms">
+                <!-- Campos Dinâmicos de Cadastro (Escondidos por padrão no Login) -->
                 <div class="form-group campo-cadastro" style="display: none;">
                     <label>Nome Completo</label>
                     <input type="text" id="auth-nome" class="form-control" placeholder="Seu nome completo">
@@ -132,6 +134,7 @@
         </div>
     </div>
 
+    <!-- ESTRUTURA DO SITE PRINCIPAL -->
     <div id="app-conteudo" style="display: none; flex-direction: column; min-height: 100vh;">
         <nav>
             <div class="nav-container">
@@ -146,8 +149,10 @@
         </nav>
 
         <main>
+            <!-- ÁREA EXCLUSIVA DO ADMINISTRADOR -->
             <div id="painel-adm" style="display: none;">
                 
+                <!-- Bloco 1: Validação de Tokens Rápidos -->
                 <div class="adm-box" style="border-color: rgba(16, 185, 129, 0.3);">
                     <div class="adm-section-title" style="color: var(--accent-green)">🛡️ 1. Aprovação por Token (WhatsApp)</div>
                     <div class="adm-validation-zone" style="display: flex; gap: 10px;">
@@ -156,6 +161,7 @@
                     </div>
                 </div>
 
+                <!-- Bloco 2: Criador / Editor de Enquetes Ativas -->
                 <div class="adm-box" style="border-color: rgba(59, 130, 246, 0.3);">
                     <div class="adm-section-title">📝 2. Publicar Nova Enquete Ativa</div>
                     <div class="form-group" style="margin-bottom: 10px;">
@@ -169,6 +175,7 @@
                     <button class="btn-action" style="margin-top: 12px; background: var(--accent-blue);" onclick="admAtualizarEnquete()">⚡ Inserir e Atualizar Enquete no Site</button>
                 </div>
 
+                <!-- Bloco 3: Controle e Correção Manual de Membros por Código -->
                 <div class="adm-box" style="border-color: rgba(245, 158, 11, 0.3);" id="modulo-correcao-membro">
                     <div class="adm-section-title" style="color: #f59e0b;">⚙️ 3. Modificar Membro Selecionado</div>
                     <div class="adm-row">
@@ -184,6 +191,7 @@
                     <button class="btn-action" style="margin-top: 12px; background: #d97706;" onclick="admAjustarMembroManual()">Salvar Atualizações do Cliente</button>
                 </div>
 
+                <!-- BLOCO 4: LISTA DE MEMBROS CADASTRADOS -->
                 <div class="adm-box" style="border-color: rgba(255, 255, 255, 0.15);">
                     <div class="adm-section-title" style="color: #f3f4f6;">👥 4. Lista Completa de Membros Registrados</div>
                     <p style="font-size:12px; color:var(--text-muted); margin-bottom: 8px;">Clique em "Gerenciar" para ver todos os dados completos do membro e realizar ajustes de saldo.</p>
@@ -204,14 +212,17 @@
                                 </tr>
                             </thead>
                             <tbody id="adm-tabela-membros-corpo">
-                                </tbody>
+                                <!-- Preenchido dinamicamente via JS -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
 
+                <!-- Botão de Reset Absoluto -->
                 <button class="btn-nav" style="background: var(--accent-red); margin-bottom: 24px; width: 100%; border: none; font-weight: 700; padding: 14px;" onclick="admZerarTudo()">⚠️ ZERAR CRÉDITOS DE TODAS AS CONTAS E ENQUETES</button>
             </div>
 
+            <!-- VISÃO 1: ENQUETE -->
             <section id="view-enquetes" class="view-section">
                 <div class="titulo-secao">
                     <span>Enquete Ativa</span>
@@ -220,7 +231,7 @@
 
                 <div class="poll-card">
                     <div class="prize-pool-box">
-                        <div style="font-size: 12px; color: #93c5fd; text-transform: uppercase; margin-bottom: 6px;">Valor em Jogo (Multiplicado 5x)</div>
+                        <div style="font-size: 12px; color: #93c5fd; text-transform: uppercase; margin-bottom: 6px;">Valor Acumulado em Jogo</div>
                         <div class="prize-value" id="label-premio-total">R$ 0,00</div>
                     </div>
 
@@ -242,6 +253,7 @@
                 </div>
             </section>
 
+            <!-- VISÃO 2: LOJA -->
             <section id="view-loja" class="view-section">
                 <div class="titulo-secao">
                     <button class="btn-nav" onclick="navegarPara('view-enquetes')">← Voltar</button>
@@ -252,6 +264,7 @@
         </main>
     </div>
 
+    <!-- MODAL DE CHECKOUT PIX -->
     <div id="modal-pix" class="pix-modal">
         <div class="pix-modal-content">
             <h3 style="color: white; font-weight: 800;">Pagamento via Pix</h3>
@@ -328,7 +341,6 @@
 
             if(!emailInput || !senhaInput) { alert("Preencha o e-mail e a senha!"); return; }
 
-            // Credenciais mestre do Administrador
             if(emailInput === "@admhelth" && senhaInput === "2481") {
                 usuarioLogado = { login: "@admhelth", email: "@admhelth", role: "ADM", codigo: "MASTER-ADM", nome: "Administrador" };
                 logarSucesso();
@@ -366,7 +378,6 @@
                 localStorage.setItem('voxpool_usuarios', JSON.stringify(bancoUsuarios));
                 alert(`Cadastro concluído com sucesso!\nSeu Código de Membro é: ${codigoGerado}\n\nUse seu E-mail e Senha para logar.`);
                 
-                // Limpa campos de cadastro
                 document.getElementById('auth-nome').value = '';
                 document.getElementById('auth-whatsapp').value = '';
                 document.getElementById('auth-cpf').value = '';
@@ -374,7 +385,6 @@
                 
                 alternarModoAuth();
             } else {
-                // Modo LOGIN
                 if(bancoUsuarios[emailInput] && bancoUsuarios[emailInput].senha === senhaInput) {
                     usuarioLogado = { 
                         login: emailInput, 
@@ -533,7 +543,7 @@
                 document.getElementById('adm-membro-novo-saldo').value = '';
                 
                 admAtualizarTabelaMembros();
-                alert(`⚙️ Conta de "${bancoUsuarios[usuarioEncontradoChave].nome}" atualizada com sucesso para ${novoSaldoVal} créditos.`);
+                alert(`⚙️ Conta de "${bancoUsuarios[usuarioEncontradoChave].nome}" updated com sucesso para ${novoSaldoVal} créditos.`);
             } else {
                 alert("⚠️ Nenhum membro encontrado com o ID informado!");
             }
@@ -638,12 +648,16 @@
             document.getElementById('texto-opt2').innerText = appState.estruturaEnquete.opt2;
             document.getElementById('texto-opt3').innerText = appState.estruturaEnquete.opt3;
 
+            // CORREÇÃO AQUI: Cada voto agora soma exatamente R$ 5,00 no prêmio total acumulado
             const totalVotos = appState.votos.opt1 + appState.votos.opt2 + appState.votos.opt3;
-            const valorEmJogo = (totalVotos * 5.00) * 5;
+            const valorEmJogo = totalVotos * 5.00;
+            
             document.getElementById('label-premio-total').innerText = `R$ ${valorEmJogo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('votos-opt1').innerText = `${appState.votos.opt1} votos`;
             document.getElementById('votos-opt2').innerText = `${appState.votos.opt2} votos`;
             document.getElementById('votos-opt3').innerText = `${appState.votos.opt3} votos`;
+            
+            // Exibe corretamente o saldo real de créditos do usuário logado na carteira
             document.getElementById('saldo-atual').innerText = appState.saldoCreditos;
         }
 
