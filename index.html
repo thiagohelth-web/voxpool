@@ -65,8 +65,11 @@
 
         /* CARDS */
         .poll-card { background: var(--bg-card); border-radius: 24px; border: 1px solid var(--border-color); padding: 24px; position: relative; }
-        .prize-pool-box { background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); border: 1px solid var(--accent-blue); border-radius: 16px; padding: 16px; text-align: center; margin-bottom: 20px; }
-        .prize-value { font-size: 28px; font-weight: 800; color: #ffffff; text-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
+        
+        /* NOVO PAINEL DE MONITORAMENTO (EM LUGAR DO SALDO ACUMULADO) */
+        .status-andamento-box { background: linear-gradient(135deg, #1e222b 0%, #15171e 100%); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; text-align: center; margin-bottom: 20px; }
+        .status-andamento-titulo { font-size: 11px; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 6px; font-weight: 700; letter-spacing: 0.5px; }
+        .status-andamento-lider { font-size: 18px; font-weight: 700; color: var(--accent-green); }
         
         /* CRONÔMETRO */
         .timer-box { background: #000; border: 2px solid #ef4444; border-radius: 12px; padding: 10px; text-align: center; margin-bottom: 20px; font-family: monospace; font-size: 22px; font-weight: bold; color: #ef4444; letter-spacing: 2px; box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.3); }
@@ -74,27 +77,24 @@
         .timer-box.paused-timer { border-color: #f59e0b; color: #f59e0b; box-shadow: inset 0 0 10px rgba(245, 158, 11, 0.3); }
 
         .options-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-        .option-label { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+        .option-label { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease; }
         .option-label.selected { border-color: var(--accent-blue); background: rgba(59, 130, 246, 0.1); }
         .btn-action { width: 100%; background: var(--accent-blue); color: white; border: none; border-radius: 14px; padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; }
         .btn-action:disabled { background: #2d3242; color: #6b7280; cursor: not-allowed; }
         
-        .store-grid { display: flex; flex-direction: column; gap: 16px; }
-        .credit-card { background: var(--bg-card); border-radius: 20px; border: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-
-        /* MODAIS */
-        .pix-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
-        .pix-modal-content { background: var(--bg-card); border: 1px solid var(--border-color); padding: 24px; border-radius: 24px; max-width: 450px; width: 100%; text-align: center; }
-        .pix-key-box { background: var(--bg-input); border: 1px dashed var(--accent-green); padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; color: var(--accent-green); margin: 16px 0; word-break: break-all; }
-
         /* DETALHAMENTO DE SAQUE TRANSPARENTE */
         .saque-detalhes-container { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
         .saque-linha-info { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
         .saque-linha-info:last-child { margin-bottom: 0; padding-top: 8px; border-top: 1px dashed var(--border-color); }
+
+        .pix-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+        .pix-modal-content { background: var(--bg-card); border: 1px solid var(--border-color); padding: 24px; border-radius: 24px; max-width: 450px; width: 100%; text-align: center; }
+        .pix-key-box { background: var(--bg-input); border: 1px dashed var(--accent-green); padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; color: var(--accent-green); margin: 16px 0; word-break: break-all; }
     </style>
 </head>
 <body>
 
+    <!-- VISÃO 0: TELA DE LOGIN / CADASTRO -->
     <div id="view-auth" class="view-section active" style="display: flex; min-height: 100vh; width: 100%;">
         <div class="auth-container">
             <div class="auth-logo">Vox<span>Populi</span></div>
@@ -132,6 +132,7 @@
         </div>
     </div>
 
+    <!-- ESTRUTURA DO SITE PRINCIPAL -->
     <div id="app-conteudo" style="display: none; flex-direction: column; min-height: 100vh;">
         <nav>
             <div class="nav-container">
@@ -146,8 +147,10 @@
         </nav>
 
         <main>
+            <!-- ÁREA EXCLUSIVA DO ADMINISTRADOR -->
             <div id="painel-adm" style="display: none;">
                 
+                <!-- Bloco 1: Validação de Tokens Rápidos -->
                 <div class="adm-box" style="border-color: rgba(16, 185, 129, 0.3);">
                     <div class="adm-section-title" style="color: var(--accent-green)">🛡️ 1. Aprovação por Token (WhatsApp)</div>
                     <div class="adm-validation-zone" style="display: flex; gap: 10px;">
@@ -156,8 +159,9 @@
                     </div>
                 </div>
 
+                <!-- Bloco 2: Criador / Editor de Enquetes Ativas com Cronômetro (Duas Respostas Fixas) -->
                 <div class="adm-box" style="border-color: rgba(59, 130, 246, 0.3);">
-                    <div class="adm-section-title">📝 2. Publicar Nova Enquete Ativa (2 Opções)</div>
+                    <div class="adm-section-title">📝 2. Publicar Nova Enquete Ativa (Apenas 2 Opções)</div>
                     <div class="form-group" style="margin-bottom: 10px;">
                         <input type="text" id="adm-poll-pergunta" class="form-control" placeholder="Escreva a pergunta (Ex: Quem é melhor?)">
                     </div>
@@ -174,6 +178,7 @@
                     <button class="btn-action" style="margin-top: 12px; background: var(--accent-blue);" onclick="admAtualizarEnquete()">Injetar Nova Enquete (Pausada)</button>
                 </div>
 
+                <!-- Bloco 2.1: Modificar / Zerar o Tempo em Tempo Real -->
                 <div class="adm-box" style="border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.02);">
                     <div class="adm-section-title" style="color: var(--accent-red)">⏱️ 2.1 Finalização e Controle da Enquete</div>
                     
@@ -198,6 +203,7 @@
                     </div>
                 </div>
 
+                <!-- Bloco 3: Ajuste Manual de Moedas -->
                 <div class="adm-box" style="border-color: rgba(245, 158, 11, 0.3);" id="modulo-correcao-membro">
                     <div class="adm-section-title" style="color: #f59e0b;">⚙️ 3. Modificar Saldo do Membro</div>
                     <div class="adm-row">
@@ -211,6 +217,7 @@
                     <button class="btn-action" style="margin-top: 12px; background: #d97706;" onclick="admAjustarMembroManual()">Salvar Moedas do Cliente</button>
                 </div>
 
+                <!-- BLOCO 4: LISTA DE MEMBROS CADASTRADOS -->
                 <div class="adm-box" style="border-color: rgba(255, 255, 255, 0.15);">
                     <div class="adm-section-title" style="color: #f3f4f6;">👥 4. Lista Completa de Membros Registrados</div>
                     <div class="table-container">
@@ -234,6 +241,7 @@
                 </div>
             </div>
 
+            <!-- VISÃO 1: ENQUETE -->
             <section id="view-enquetes" class="view-section">
                 <div class="titulo-secao">
                     <span>Previsão Ativa</span>
@@ -248,22 +256,25 @@
                 </div>
 
                 <div class="poll-card">
-                    <div class="prize-pool-box">
-                        <div style="font-size: 11px; color: #93c5fd; text-transform: uppercase; margin-bottom: 4px;">Volume Total Acumulado nesta Enquete</div>
-                        <div class="prize-value" id="label-premio-total">0.00 Moedas</div>
+                    <!-- PAINEL SUBSTITUTO: ENQUETE EM ANDAMENTO / LIDERANÇA DE VOTOS -->
+                    <div class="status-andamento-box">
+                        <div class="status-andamento-titulo">🔥 Enquete em Andamento</div>
+                        <div class="status-andamento-lider" id="label-tendencia-lider">Aguardando palpites...</div>
                     </div>
 
                     <div class="poll-question" style="margin-bottom:16px; font-weight:600; text-align:center; font-size:18px;" id="label-pergunta-ativa">Carregando pergunta...</div>
 
+                    <!-- GRUPO DE SELEÇÃO: EXIBE DINAMICAMENTE 70% OU 30% DE ACORDO COM A SELEÇÃO -->
                     <div class="options-group">
                         <label class="option-label" id="container-opt1" onclick="selecionarOpcao('opt1')">
-                            <span id="texto-opt1">-</span> <span id="votos-opt1" style="font-weight:700; color:var(--accent-blue)">0.00 moedas</span>
+                            <span id="texto-opt1">-</span> <span id="votos-opt1" style="font-weight:700; color:var(--accent-blue)">--</span>
                         </label>
                         <label class="option-label" id="container-opt2" onclick="selecionarOpcao('opt2')">
-                            <span id="texto-opt2">-</span> <span id="votos-opt2" style="font-weight:700; color:var(--accent-blue)">0.00 moedas</span>
+                            <span id="texto-opt2">-</span> <span id="votos-opt2" style="font-weight:700; color:var(--accent-blue)">--</span>
                         </label>
                     </div>
 
+                    <!-- SELETOR DE QUANTIDADE DE MOEDAS -->
                     <div class="form-group" style="margin-bottom:16px;">
                         <label style="font-weight:600; color:var(--text-main); margin-bottom:6px;">Quantas moedas deseja votar?</label>
                         <input type="number" id="input-qtd-voto-moedas" class="form-control" value="1" min="1" placeholder="Ex: 1, 5, 10...">
@@ -274,6 +285,7 @@
 
                     <button class="btn-action" id="btn-votar" onclick="processarVoto()">Confirmar Palpites</button>
                     
+                    <!-- AREA FINANCEIRA DE SAQUE DO MEMBRO -->
                     <div id="financeiro-membro-box" style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border-color); display:none;">
                         <div style="font-size: 13px; font-weight:700; margin-bottom:10px; color:var(--text-main)">Painel de Retirada (Pix)</div>
                         
@@ -297,6 +309,7 @@
                 </div>
             </section>
 
+            <!-- VISÃO 2: LOJA -->
             <section id="view-loja" class="view-section">
                 <div class="titulo-secao">
                     <button class="btn-nav" onclick="navegarPara('view-enquetes')">← Voltar</button>
@@ -316,6 +329,7 @@
         </main>
     </div>
 
+    <!-- MODAL DE CHECKOUT PIX -->
     <div id="modal-pix" class="pix-modal">
         <div class="pix-modal-content">
             <h3 style="color: white; font-weight: 800;">Pagamento via Pix</h3>
@@ -467,7 +481,7 @@
 
             navegarPara('view-enquetes');
             renderizarEstruturaEnquete();
-            atualizarPainelPremio();
+            atualizarPainelTendencia();
             inicializarCronometro();
         }
 
@@ -482,7 +496,6 @@
                 document.getElementById('badge-pendente').style.display = (dadosUser.pendente > 0) ? 'inline-block' : 'none';
                 document.getElementById('badge-saque-pendente').style.display = (dadosUser.saquePendente > 0) ? 'inline-block' : 'none';
                 
-                // Preenche a interface transparente do Usuário
                 document.getElementById('saque-txt-bruto').innerText = saldoBruto.toFixed(2);
                 document.getElementById('saque-txt-taxa').innerText = taxa.toFixed(2);
                 document.getElementById('saque-txt-liquido').innerText = liquido.toFixed(2);
@@ -503,9 +516,21 @@
             atualizarVotosVisuais();
         }
 
+        // ALTERAÇÃO COMPORTAMENTAL: MOSTRAR 70% E 30% BASEADO NA SELEÇÃO ATUAL
         function atualizarVotosVisuais() {
-            document.getElementById('votos-opt1').innerText = `${Number(appState.votos.opt1).toFixed(2)} moedas`;
-            document.getElementById('votos-opt2').innerText = `${Number(appState.votos.opt2).toFixed(2)} moedas`;
+            const v1 = document.getElementById('votos-opt1');
+            const v2 = document.getElementById('votos-opt2');
+
+            if (appState.opcaoSelecionada === 'opt1') {
+                v1.innerText = "70%";
+                v2.innerText = "30%";
+            } else if (appState.opcaoSelecionada === 'opt2') {
+                v1.innerText = "30%";
+                v2.innerText = "70%";
+            } else {
+                v1.innerText = "--";
+                v2.innerText = "--";
+            }
         }
 
         function navegarPara(idSecao) {
@@ -548,7 +573,7 @@
                 const segundos = Math.floor((totalMilis % (1000 * 60)) / 1000);
 
                 const hDisplay = horas < 10 ? "0" + horas : horas;
-                const mDisplay = minutes = minutos < 10 ? "0" + minutos : minutos;
+                const mDisplay = minutos < 10 ? "0" + minutos : minutos;
                 const sDisplay = segundos < 10 ? "0" + segundos : segundos;
 
                 labelRelogio.innerText = `${hDisplay}:${mDisplay}:${sDisplay}`;
@@ -669,6 +694,9 @@
             document.getElementById('btn-votar').disabled = false;
             document.getElementById('btn-votar').innerText = "Confirmar Palpites";
             
+            appState.opcaoSelecionada = null;
+            atualizarVotosVisuais();
+            atualizarPainelTendencia();
             inicializarCronometro();
             alert("Nova enquete injetada! Ative o cronômetro para abrir as votações.");
         }
@@ -681,6 +709,7 @@
             document.querySelectorAll('.option-label').forEach(el => el.classList.remove('selected'));
             document.getElementById(`container-${idOpcao}`).classList.add('selected');
             appState.opcaoSelecionada = idOpcao;
+            atualizarVotosVisuais();
         }
 
         function processarVoto() {
@@ -718,19 +747,33 @@
 
             document.getElementById('saldo-atual').innerText = Number(appState.saldoCreditos).toFixed(2);
             
-            atualizarVotosVisuais();
-            atualizarPainelPremio();
+            atualizarPainelTendencia();
             atualizarValoresSaqueInterface();
             
             alert(`Palpite confirmado! Suas ${qtdMoedasVoto} moedas foram computadas.`);
         }
 
-        function atualizarPainelPremio() {
-            const totalMoedas = appState.votos.opt1 + appState.votos.opt2;
-            document.getElementById('label-premio-total').innerText = `${Number(totalMoedas).toFixed(2)} Moedas`;
+        // NOVO MONITORAMENTO: MOSTRA QUAL RESPOSTA ESTÁ RECEBENDO MAIS VOTOS
+        function atualizarPainelTendencia() {
+            const labelTendencia = document.getElementById('label-tendencia-lider');
+            const v1 = appState.votos.opt1;
+            const v2 = appState.votos.opt2;
+
+            if(v1 === 0 && v2 === 0) {
+                labelTendencia.innerText = "Aguardando primeiros palpites...";
+                labelTendencia.style.color = "var(--text-muted)";
+            } else if (v1 === v2) {
+                labelTendencia.innerText = "Empate Técnico no Momento!";
+                labelTendencia.style.color = "#f59e0b";
+            } else if (v1 > v2) {
+                labelTendencia.innerText = `📈 Liderando: ${appState.estruturaEnquete.opt1}`;
+                labelTendencia.style.color = "var(--accent-green)";
+            } else {
+                labelTendencia.innerText = `📈 Liderando: ${appState.estruturaEnquete.opt2}`;
+                labelTendencia.style.color = "var(--accent-green)";
+            }
         }
 
-        // LIQUIDAÇÃO SINCRONIZADA E SEGURA COM PROTEÇÃO DE 0,60 PARA ERROS
         function admFinalizarEVisualizarGanhador(opcaoVencedora) {
             const nomeOpcao = opcaoVencedora === 'opt1' ? appState.estruturaEnquete.opt1 : appState.estruturaEnquete.opt2;
             if(!confirm(`Confirma que a resposta certa/vencedora é "${nomeOpcao}"? As contas dos membros serão liquidadas agora.`)) return;
@@ -742,25 +785,23 @@
                 if(u.historicoVotos && u.historicoVotos.length > 0) {
                     u.historicoVotos.forEach(voto => {
                         if(voto.opcaoEscolhida === opcaoVencedora) {
-                            // ACERTOU: Retorno de 1,40 moedas por unidade apostada
                             const retornoGanhador = voto.moedasApostadas * 1.40;
                             u.saldo = (u.saldo || 0) + retornoGanhador;
                         } else {
-                            // ERROU: Proteção de capital de 0,60 moedas de volta por unidade apostada
                             const retornoConsolacao = voto.moedasApostadas * 0.60;
                             u.saldo = (u.saldo || 0) + retornoConsolacao;
                         }
                     });
-                    u.historicoVotos = []; // Limpa histórico da rodada encerrada
+                    u.historicoVotos = [];
                 }
             });
 
             localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
             
-            // Reseta estados locais e buffers de visualização da enquete de forma limpa
             appState.votos = { opt1: 0, opt2: 0 };
             appState.estruturaEnquete.tempoRestanteMilis = 0;
             appState.estruturaEnquete.statusTempo = "PAUSADO";
+            appState.opcaoSelecionada = null;
             
             localStorage.setItem('voxpopuli_votos_novos', JSON.stringify(appState.votos));
             localStorage.setItem('voxpopuli_estrutura_enquete_nova', JSON.stringify(appState.estruturaEnquete));
@@ -769,7 +810,8 @@
             admAtualizarTabelaMembros();
             inicializarCronometro();
             renderizarEstruturaEnquete();
-            atualizarPainelPremio();
+            atualizarVotosVisuais();
+            atualizarPainelTendencia();
         }
 
         function admAtualizarTabelaMembros() {
@@ -891,7 +933,6 @@
             window.open(urlWpp, '_blank');
         }
 
-        // SISTEMA DE SAQUE TOTALMENTE EXCLUSIVO E MONETIZADO SOBRE A RETIRADA
         function solicitarSaqueMembro() {
             let bancoUsuarios = obterBancoUsuarios();
             const d = bancoUsuarios[usuarioLogado.login];
