@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxPopuli - Login, Administração & Pix Seguro</title>
+    <title>VoxPopuli - Painel Completo</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -24,7 +24,7 @@
         body { background-color: var(--bg-principal); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
 
         /* AUTENTICAÇÃO */
-        .auth-container { max-width: 450px; width: 100%; margin: auto; padding: 32px 24px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); transition: max-width 0.3s ease; }
+        .auth-container { max-width: 450px; width: 100%; margin: auto; padding: 32px 24px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
         .auth-logo { font-size: 28px; font-weight: 800; color: var(--accent-blue); text-align: center; margin-bottom: 24px; }
         .auth-logo span { color: var(--accent-green); }
         .form-group { margin-bottom: 16px; }
@@ -56,7 +56,7 @@
         th, td { padding: 12px; border-bottom: 1px solid var(--border-color); }
         th { background: rgba(255, 255, 255, 0.02); font-weight: 600; color: var(--text-muted); }
         .btn-table-action { background: var(--accent-blue); border: none; color: white; padding: 6px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; }
-        .btn-table-action:hover { opacity: 0.9; }
+        .btn-table-action.danger { background: var(--accent-red); margin-left: 4px; }
 
         /* CONTEÚDO */
         main { max-width: 600px; width: 100%; margin: 0 auto; padding: 24px 16px; flex: 1; }
@@ -78,7 +78,7 @@
         .credit-card { background: var(--bg-card); border-radius: 20px; border: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
         .btn-buy-package { background: #1d4ed8; color: white; border: none; border-radius: 12px; padding: 12px; font-weight: 700; cursor: pointer; }
 
-        /* MODAL PIX */
+        /* MODAIS */
         .pix-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
         .pix-modal-content { background: var(--bg-card); border: 1px solid var(--border-color); padding: 24px; border-radius: 24px; max-width: 450px; width: 100%; text-align: center; }
         .pix-key-box { background: var(--bg-input); border: 1px dashed var(--accent-green); padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; color: var(--accent-green); margin: 16px 0; word-break: break-all; }
@@ -86,6 +86,7 @@
 </head>
 <body>
 
+    <!-- VISÃO 0: TELA DE LOGIN / CADASTRO -->
     <div id="view-auth" class="view-section active" style="display: flex; min-height: 100vh; width: 100%;">
         <div class="auth-container">
             <div class="auth-logo">Vox<span>Populi</span></div>
@@ -132,6 +133,7 @@
         </div>
     </div>
 
+    <!-- ESTRUTURA DO SITE PRINCIPAL -->
     <div id="app-conteudo" style="display: none; flex-direction: column; min-height: 100vh;">
         <nav>
             <div class="nav-container">
@@ -146,8 +148,10 @@
         </nav>
 
         <main>
+            <!-- ÁREA EXCLUSIVA DO ADMINISTRADOR -->
             <div id="painel-adm" style="display: none;">
                 
+                <!-- Bloco 1: Validação de Tokens Rápidos -->
                 <div class="adm-box" style="border-color: rgba(16, 185, 129, 0.3);">
                     <div class="adm-section-title" style="color: var(--accent-green)">🛡️ 1. Aprovação por Token (WhatsApp)</div>
                     <div class="adm-validation-zone" style="display: flex; gap: 10px;">
@@ -156,6 +160,7 @@
                     </div>
                 </div>
 
+                <!-- Bloco 2: Criador / Editor de Enquetes Ativas -->
                 <div class="adm-box" style="border-color: rgba(59, 130, 246, 0.3);">
                     <div class="adm-section-title">📝 2. Publicar Nova Enquete Ativa</div>
                     <div class="form-group" style="margin-bottom: 10px;">
@@ -169,6 +174,7 @@
                     <button class="btn-action" style="margin-top: 12px; background: var(--accent-blue);" onclick="admAtualizarEnquete()">⚡ Inserir e Atualizar Enquete no Site</button>
                 </div>
 
+                <!-- Bloco 3: Controle e Correção Manual de Membros por Código -->
                 <div class="adm-box" style="border-color: rgba(245, 158, 11, 0.3);" id="modulo-correcao-membro">
                     <div class="adm-section-title" style="color: #f59e0b;">⚙️ 3. Modificar Membro Selecionado</div>
                     <div class="adm-row">
@@ -184,38 +190,43 @@
                     <button class="btn-action" style="margin-top: 12px; background: #d97706;" onclick="admAjustarMembroManual()">Salvar Atualizações do Cliente</button>
                 </div>
 
+                <!-- BLOCO 4: LISTA DE MEMBROS CADASTRADOS -->
                 <div class="adm-box" style="border-color: rgba(255, 255, 255, 0.15);">
                     <div class="adm-section-title" style="color: #f3f4f6;">👥 4. Lista Completa de Membros Registrados</div>
-                    <p style="font-size:12px; color:var(--text-muted); margin-bottom: 8px;">Clique em "Gerenciar" para ver todos os dados completos do membro e realizar ajustes de saldo.</p>
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom: 8px;">Gerencie saldos ou delete membros de forma definitiva.</p>
                     
                     <div class="table-container">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>ID (Código)</th>
+                                    <th>ID</th>
                                     <th>Nome</th>
-                                    <th>E-mail (Login)</th>
+                                    <th>E-mail</th>
                                     <th>WhatsApp</th>
                                     <th>CPF</th>
                                     <th>Chave Pix</th>
                                     <th>Saldo</th>
-                                    <th>Pendente</th>
-                                    <th>Ação</th>
+                                    <th>Dep. Pendente</th>
+                                    <th>Saque Pendente</th>
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="adm-tabela-membros-corpo">
-                                </tbody>
+                                <!-- Preenchido dinamicamente -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
-
-                <button class="btn-nav" style="background: var(--accent-red); margin-bottom: 24px; width: 100%; border: none; font-weight: 700; padding: 14px;" onclick="admZerarTudo()">⚠️ ZERAR CRÉDITOS DE TODAS AS CONTAS E ENQUETES</button>
             </div>
 
+            <!-- VISÃO 1: ENQUETE -->
             <section id="view-enquetes" class="view-section">
                 <div class="titulo-secao">
                     <span>Enquete Ativa</span>
-                    <span id="badge-pendente" style="font-size: 12px; color: #f59e0b; font-weight: 600; display: none;">⏳ Aguardando aprovação de créditos...</span>
+                    <div style="text-align: right;">
+                        <span id="badge-pendente" style="font-size: 11px; color: #f59e0b; font-weight: 600; display: none; block-size: auto;">⏳ Depósito aguardando aprovação...</span>
+                        <span id="badge-saque-pendente" style="font-size: 11px; color: #3b82f6; font-weight: 600; display: none; block-size: auto;">⏱️ Saque em processamento...</span>
+                    </div>
                 </div>
 
                 <div class="poll-card">
@@ -224,7 +235,7 @@
                         <div class="prize-value" id="label-premio-total">R$ 0,00</div>
                     </div>
 
-                    <div class="poll-question" id="label-pergunta-ativa">Carregando enquete...</div>
+                    <div class="poll-question" style="margin-bottom:20px; font-weight:600;" id="label-pergunta-ativa">Carregando enquete...</div>
 
                     <div class="options-group">
                         <label class="option-label" id="container-opt1" onclick="selecionarOpcao('opt1')">
@@ -239,9 +250,23 @@
                     </div>
 
                     <button class="btn-action" id="btn-votar" onclick="processarVoto()">Confirmar Voto (1 Crédito)</button>
+                    
+                    <!-- AREA FINANCEIRA DO COMPARTILHAMENTO / SAQUES DO MEMBRO -->
+                    <div id="financeiro-membro-box" style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border-color); display:none;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                            <div>
+                                <div style="font-size:11px; color:var(--text-muted)">Saldo Disponível para Saque</div>
+                                <div style="font-size:20px; font-weight:800; color:var(--accent-green)">🪙 <span id="saldo-saque-disponivel">0</span> Créditos</div>
+                            </div>
+                            <button class="btn-nav" style="background:var(--accent-green); color:white; border:none;" onclick="solicitarSaqueMembro()">💸 Sacar Saldo</button>
+                        </div>
+                        
+                        <button class="btn-nav" style="background:transparent; color:var(--accent-red); border:1px solid rgba(239,68,68,0.2); width:100%; padding:10px; border-radius:12px; margin-top:10px;" onclick="membroDeletarPropriaConta()">⚠️ Excluir Minha Conta da Plataforma</button>
+                    </div>
                 </div>
             </section>
 
+            <!-- VISÃO 2: LOJA -->
             <section id="view-loja" class="view-section">
                 <div class="titulo-secao">
                     <button class="btn-nav" onclick="navegarPara('view-enquetes')">← Voltar</button>
@@ -252,6 +277,7 @@
         </main>
     </div>
 
+    <!-- MODAL DE CHECKOUT PIX -->
     <div id="modal-pix" class="pix-modal">
         <div class="pix-modal-content">
             <h3 style="color: white; font-weight: 800;">Pagamento via Pix</h3>
@@ -359,16 +385,12 @@
                     senha: senhaInput, 
                     saldo: 0, 
                     pendente: 0,
+                    saquePendente: 0,
                     codigo: codigoGerado
                 };
                 
                 localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-                alert(`Cadastro concluído com sucesso!\nSeu Código de Membro é: ${codigoGerado}\n\nUse seu E-mail e Senha para logar.`);
-                
-                document.getElementById('auth-nome').value = '';
-                document.getElementById('auth-whatsapp').value = '';
-                document.getElementById('auth-cpf').value = '';
-                document.getElementById('auth-chavepix').value = '';
+                alert(`Cadastro concluído com sucesso!\nSeu Código de Membro é: ${codigoGerado}`);
                 
                 alternarModoAuth();
             } else {
@@ -380,7 +402,7 @@
                         nome: bancoUsuarios[emailInput].nome || "Membro",
                         codigo: bancoUsuarios[emailInput].codigo || "M-Def"
                     };
-                    appState.saldoCreditos = bancoUsuarios[emailInput].saldo;
+                    appState.saldoCreditos = bancoUsuarios[emailInput].saldo || 0;
                     logarSucesso();
                 } else {
                     alert("E-mail ou Senha incorretos!");
@@ -394,6 +416,7 @@
             
             const isAdm = usuarioLogado.role === "ADM";
             document.getElementById('painel-adm').style.display = isAdm ? 'block' : 'none';
+            document.getElementById('financeiro-membro-box').style.display = isAdm ? 'none' : 'block';
             
             if(isAdm) {
                 admAtualizarTabelaMembros();
@@ -405,8 +428,11 @@
                 badgeCod.style.display = 'block';
                 
                 let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-                if(bancoUsuarios[usuarioLogado.login] && bancoUsuarios[usuarioLogado.login].pendente > 0) {
-                    document.getElementById('badge-pendente').style.display = 'block';
+                const dadosUser = bancoUsuarios[usuarioLogado.login];
+                if(dadosUser) {
+                    document.getElementById('badge-pendente').style.display = (dadosUser.pendente > 0) ? 'inline-block' : 'none';
+                    document.getElementById('badge-saque-pendente').style.display = (dadosUser.saquePendente > 0) ? 'inline-block' : 'none';
+                    document.getElementById('saldo-saque-disponivel').innerText = dadosUser.saldo || 0;
                 }
             } else {
                 badgeCod.style.display = 'none';
@@ -438,7 +464,7 @@
             const chaves = Object.keys(bancoUsuarios);
             
             if(chaves.length === 0) {
-                corpoTabela.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted);">Nenhum membro cadastrado até o momento.</td></tr>`;
+                corpoTabela.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted);">Nenhum membro cadastrado até o momento.</td></tr>`;
                 return;
             }
 
@@ -451,6 +477,7 @@
                 const pix = dados.chavePix || '-';
                 const sal = dados.saldo || 0;
                 const pend = dados.pendente || 0;
+                const saqPend = dados.saquePendente || 0;
 
                 corpoTabela.innerHTML += `
                     <tr>
@@ -459,11 +486,13 @@
                         <td>${emailChave}</td>
                         <td>${whatsapp}</td>
                         <td>${cpf}</td>
-                        <td style="color:var(--accent-green); max-width: 120px; overflow: hidden; text-overflow: ellipsis;">${pix}</td>
+                        <td style="color:var(--accent-green);">${pix}</td>
                         <td>🪙 ${sal}</td>
-                        <td style="color:${pend > 0 ? '#f59e0b' : 'var(--text-muted)'}">${pend > 0 ? '⏳ ' + pend : 'Nenhum'}</td>
+                        <td style="color:${pend > 0 ? '#f59e0b' : 'var(--text-muted)'}">${pend > 0 ? '⏳ ' + pend : '0'}</td>
+                        <td style="color:${saqPend > 0 ? '#ef4444' : 'var(--text-muted)'}">${saqPend > 0 ? '💸 ' + saqPend : '0'}</td>
                         <td>
                             <button class="btn-table-action" onclick="admCarregarMembroParaEditar('${cod}', ${sal})">Gerenciar</button>
+                            <button class="btn-table-action danger" onclick="admDeletarMembroForcado('${emailChave}')">Excluir</button>
                         </td>
                     </tr>
                 `;
@@ -476,30 +505,83 @@
             document.getElementById('modulo-correcao-membro').scrollIntoView({ behavior: 'smooth' });
         }
 
-        function admAtualizarEnquete() {
-            const novaPerg = document.getElementById('adm-poll-pergunta').value.trim();
-            const o1 = document.getElementById('adm-poll-opt1').value.trim();
-            const o2 = document.getElementById('adm-poll-opt2').value.trim();
-            const o3 = document.getElementById('adm-poll-opt3').value.trim();
+        function admDeletarMembroForcado(emailMembro) {
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            if(bancoUsuarios[emailMembro]) {
+                if(confirm(`Tem certeza absoluta que deseja EXCLUIR permanentemente o membro "${bancoUsuarios[emailMembro].nome}" da plataforma?`)){
+                    delete bancoUsuarios[emailMembro];
+                    localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
+                    admAtualizarTabelaMembros();
+                    alert("Membro excluído com sucesso.");
+                }
+            }
+        }
 
-            if(!novaPerg || !o1 || !o2 || !o3) {
-                alert("Por favor, preencha a pergunta e todas as 3 opções de resposta!");
+        function membroDeletarPropriaConta() {
+            if(!usuarioLogado || usuarioLogado.role === "ADM") return;
+            if(confirm("ATENÇÃO: Você deseja excluir o seu cadastro permanentemente da VoxPopuli? Todos os seus saldos serão perdidos e esta ação não pode ser desfeita!")) {
+                let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+                if(bancoUsuarios[usuarioLogado.login]) {
+                    delete bancoUsuarios[usuarioLogado.login];
+                    localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
+                    alert("Sua conta foi excluída com sucesso.");
+                    fazerLogout();
+                }
+            }
+        }
+
+        function solicitarSaqueMembro() {
+            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
+            const dadosUser = bancoUsuarios[usuarioLogado.login];
+            
+            if(!dadosUser) return;
+            
+            const saldoDisponivel = dadosUser.saldo || 0;
+            if(saldoDisponivel <= 0) {
+                alert("Você não possui saldo disponível para realizar saques!");
                 return;
             }
 
-            appState.estruturaEnquete = { pergunta: novaPerg, opt1: o1, opt2: o2, opt3: o3 };
-            localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
+            const valorSaqueStr = prompt(`Quanto deseja sacar? (Disponível: ${saldoDisponivel} Créditos)\nDigite apenas o valor inteiro:`);
+            if(!valorSaqueStr) return;
 
-            appState.votos = { opt1: 0, opt2: 0, opt3: 0 };
-            localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
+            const valorSaque = parseInt(valorSaqueStr);
+            if(isNaN(valorSaque) || valorSaque <= 0) {
+                alert("Valor de saque inválido!");
+                return;
+            }
 
-            document.getElementById('adm-poll-pergunta').value = '';
-            document.getElementById('adm-poll-opt1').value = '';
-            document.getElementById('adm-poll-opt2').value = '';
-            document.getElementById('adm-poll-opt3').value = '';
+            if(valorSaque > saldoDisponivel) {
+                alert("Você não tem créditos suficientes para este saque!");
+                return;
+            }
 
+            // Atualiza localmente deduzindo o saldo e colocando em pendente
+            dadosUser.saldo -= valorSaque;
+            dadosUser.saquePendente = (dadosUser.saquePendente || 0) + valorSaque;
+            bancoUsuarios[usuarioLogado.login] = dadosUser;
+            localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
+
+            appState.saldoCreditos = dadosUser.saldo;
+            document.getElementById('saldo-saque-disponivel').innerText = dadosUser.saldo;
+            document.getElementById('badge-saque-pendente').style.display = 'inline-block';
             atualizarPainelPremio();
-            alert("✅ Enquete publicada e ativa com sucesso no site!");
+
+            // Disparar Notificação ao ADM no WhatsApp
+            const mensagemSaqueZap = encodeURIComponent(
+                `⚠️ *SOLICITAÇÃO DE SAQUE - VoxPopuli*\n\n` +
+                `👤 *Membro:* ${dadosUser.nome}\n` +
+                `🆔 *ID do Membro:* ${dadosUser.codigo}\n` +
+                `📧 *E-mail:* ${usuarioLogado.login}\n` +
+                `📱 *WhatsApp:* ${dadosUser.whatsapp}\n\n` +
+                `💸 *VALOR DO SAQUE:* ${valorSaque} Créditos\n` +
+                `🔑 *CHAVE PIX DO CLIENTE:* ${dadosUser.chavePix}\n` +
+                `👤 *CPF DO TITULAR:* ${dadosUser.cpf}\n\n` +
+                `Por favor, realize a transferência para a chave acima e dê baixa no painel administrativo.`
+            );
+
+            window.open(`https://wa.me/22992777193?text=${mensagemSaqueZap}`, '_blank');
+            alert("Solicitação de saque enviada para a administração! Aguarde o processamento via Pix.");
         }
 
         function admAjustarMembroManual() {
@@ -523,6 +605,7 @@
 
             if(usuarioEncontradoChave) {
                 bancoUsuarios[usuarioEncontradoChave].saldo = parseInt(novoSaldoVal);
+                bancoUsuarios[usuarioEncontradoChave].saquePendente = 0; // Limpa os saques pendentes se reajustou manualmente
                 bancoUsuarios[usuarioEncontradoChave].pendente = 0; 
                 localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
                 
@@ -530,16 +613,36 @@
                 document.getElementById('adm-membro-novo-saldo').value = '';
                 
                 admAtualizarTabelaMembros();
-                alert(`⚙️ Conta de "${bancoUsuarios[usuarioEncontradoChave].nome}" updated successfully to ${novoSaldoVal} credits.`);
+                alert(`⚙️ Conta atualizada com sucesso.`);
             } else {
-                alert("⚠️ Nenhum membro encontrado com o ID informado!");
+                alert("⚠️ Nenhum membro encontrado!");
             }
+        }
+
+        function admAtualizarEnquete() {
+            const novaPerg = document.getElementById('adm-poll-pergunta').value.trim();
+            const o1 = document.getElementById('adm-poll-opt1').value.trim();
+            const o2 = document.getElementById('adm-poll-opt2').value.trim();
+            const o3 = document.getElementById('adm-poll-opt3').value.trim();
+
+            if(!novaPerg || !o1 || !o2 || !o3) {
+                alert("Preencha todos os campos!");
+                return;
+            }
+
+            appState.estruturaEnquete = { pergunta: novaPerg, opt1: o1, opt2: o2, opt3: o3 };
+            localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(appState.estruturaEnquete));
+
+            appState.votos = { opt1: 0, opt2: 0, opt3: 0 };
+            localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
+
+            atualizarPainelPremio();
+            alert("✅ Enquete publicada com sucesso!");
         }
 
         function abrirCheckoutPix(qtd, total) {
             const agora = new Date();
-            const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            
+            const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             pacotePendente = { qtd, total, hora: horaFormatada };
             
             document.getElementById('modal-info-qtd').innerText = `${qtd} Créditos`;
@@ -548,29 +651,24 @@
             document.getElementById('modal-pix').style.display = 'flex';
         }
 
-        function fecharModalPix() {
-            document.getElementById('modal-pix').style.display = 'none';
-        }
+        function fecharModalPix() { document.getElementById('modal-pix').style.display = 'none'; }
 
         function solicitarLiberacaoPix() {
             if(!pacotePendente) return;
-
             const tokenSeguranca = btoa(`${usuarioLogado.login}|${pacotePendente.qtd}|${pacotePendente.hora}`).replace(/=/g, '');
 
             let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
             bancoUsuarios[usuarioLogado.login].pendente = pacotePendente.qtd;
             localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
 
-            document.getElementById('badge-pendente').style.display = 'block';
+            document.getElementById('badge-pendente').style.display = 'inline-block';
 
             const mensagemZap = encodeURIComponent(
-                `Olá, acabei de fazer o Pix de confirmação!\n\n` +
+                `Olá, fiz o Pix de confirmação!\n\n` +
                 `👤 *Membro:* ${usuarioLogado.nome} (ID: ${usuarioLogado.codigo})\n` +
-                `🪙 *Créditos Solicitados:* ${pacotePendente.qtd} Crd\n` +
-                `💰 *Valor Enviado:* R$ ${pacotePendente.total.toFixed(2)}\n` +
-                `⏱ *Hora da Solicitação:* ${pacotePendente.hora}\n\n` +
-                `🔑 *TOKEN DE LIBERAÇÃO RESTRITO (Copie abaixo):*\n` +
-                `${tokenSeguranca}`
+                `🪙 *Créditos:* ${pacotePendente.qtd} Crd\n` +
+                `💰 *Valor:* R$ ${pacotePendente.total.toFixed(2)}\n\n` +
+                `🔑 *TOKEN RESTRITO:*\n${tokenSeguranca}`
             );
 
             window.open(`https://wa.me/22992777193?text=${mensagemZap}`, '_blank');
@@ -580,53 +678,22 @@
 
         function admProcessarToken() {
             const token = document.getElementById('adm-token-input').value.trim();
-            if(!token) { alert("Insira o token enviado pelo usuário!"); return; }
-
+            if(!token) return;
             try {
                 const decodificado = atob(token);
-                const [usuarioAlvo, creditosAString, horaPedido] = decodificado.split('|');
+                const [usuarioAlvo, creditosAString] = decodificado.split('|');
                 const qtdCreditos = parseInt(creditosAString);
 
                 let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-
                 if(bancoUsuarios[usuarioAlvo]) {
                     bancoUsuarios[usuarioAlvo].saldo += qtdCreditos;
                     bancoUsuarios[usuarioAlvo].pendente = 0;
                     localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-
                     admAtualizarTabelaMembros();
-                    alert(`✅ SUCESSO!\nUsuário: ${bancoUsuarios[usuarioAlvo].nome}\nCréditos: +${qtdCreditos} liberados.`);
+                    alert("✅ Créditos liberados!");
                     document.getElementById('adm-token-input').value = '';
-                } else {
-                    alert("⚠ Usuário não encontrado!");
                 }
-            } catch(e) {
-                alert("❌ Token inválido!");
-            }
-        }
-
-        function admZerarTudo() {
-            if(!confirm("Deseja zerar COMPLETAMENTE todas as contas, votos e retornar para a enquete padrão?")) return;
-
-            appState.votos = { opt1: 0, opt2: 0, opt3: 0 };
-            localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
-            
-            appState.estruturaEnquete = enquetePadrao;
-            localStorage.setItem('voxpopuli_estrutura_enquete', JSON.stringify(enquetePadrao));
-
-            let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-            for (let usuario in bancoUsuarios) {
-                bancoUsuarios[usuario].saldo = 0;
-                bancoUsuarios[usuario].pendente = 0;
-            }
-            localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-
-            appState.saldoCreditos = 0;
-            appState.jaVotou = false;
-            
-            admAtualizarTabelaMembros();
-            atualizarPainelPremio();
-            alert("💥 Sistema limpo com sucesso!");
+            } catch(e) { alert("Token inválido!"); }
         }
 
         function atualizarPainelPremio() {
@@ -636,13 +703,10 @@
             document.getElementById('texto-opt3').innerText = appState.estruturaEnquete.opt3;
 
             const totalVotos = appState.votos.opt1 + appState.votos.opt2 + appState.votos.opt3;
-            const valorEmJogo = totalVotos * 5.00;
-            
-            document.getElementById('label-premio-total').innerText = `R$ ${valorEmJogo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('label-premio-total').innerText = `R$ ${(totalVotos * 5).toFixed(2)}`;
             document.getElementById('votos-opt1').innerText = `${appState.votos.opt1} votos`;
             document.getElementById('votos-opt2').innerText = `${appState.votos.opt2} votos`;
             document.getElementById('votos-opt3').innerText = `${appState.votos.opt3} votos`;
-            
             document.getElementById('saldo-atual').innerText = appState.saldoCreditos;
         }
 
@@ -654,11 +718,10 @@
         }
 
         function processarVoto() {
-            if (!appState.opcaoSelecionada) { alert("Selecione uma opção!"); return; }
-            if (appState.saldoCreditos < 1) { alert("Saldo insuficiente! Vá até a Loja."); navegarPara('view-loja'); return; }
+            if (!appState.opcaoSelecionada) return;
+            if (appState.saldoCreditos < 1) { alert("Saldo insuficiente!"); return; }
 
             let bancoUsuarios = JSON.parse(localStorage.getItem('voxpopuli_usuarios') || "{}");
-            
             appState.saldoCreditos -= 1;
             if(bancoUsuarios[usuarioLogado.login]) {
                 bancoUsuarios[usuarioLogado.login].saldo = appState.saldoCreditos;
@@ -667,11 +730,10 @@
 
             appState.votos[appState.opcaoSelecionada] += 1;
             localStorage.setItem('voxpopuli_votos', JSON.stringify(appState.votos));
-            
             appState.jaVotou = true;
             document.getElementById('btn-votar').disabled = true;
             document.getElementById('btn-votar').innerText = "Voto Computado!";
-            
+            document.getElementById('saldo-saque-disponivel').innerText = appState.saldoCreditos;
             atualizarPainelPremio();
         }
 
