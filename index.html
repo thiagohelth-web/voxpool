@@ -104,6 +104,7 @@
 </head>
 <body>
 
+    <!-- VISÃO 0: TELA DE LOGIN / CADASTRO -->
     <div id="view-auth" class="view-section active" style="display: flex; min-height: 100vh; width: 100%;">
         <div class="auth-container">
             <div class="auth-logo">Vox<span>Populi</span></div>
@@ -141,6 +142,7 @@
         </div>
     </div>
 
+    <!-- ESTRUTURA DO SITE PRINCIPAL -->
     <div id="app-conteudo" style="display: none; flex-direction: column; min-height: 100vh;">
         <nav>
             <div class="nav-container">
@@ -155,6 +157,7 @@
         </nav>
 
         <main>
+            <!-- ÁREA EXCLUSIVA DO ADMINISTRADOR -->
             <div id="painel-adm" style="display: none;">
                 
                 <div class="adm-box" style="border-color: rgba(16, 185, 129, 0.3);">
@@ -236,6 +239,7 @@
                 </div>
             </div>
 
+            <!-- VISÃO 1: ENQUETES (PAINEL DO CLIENTE) -->
             <section id="view-enquetes" class="view-section">
                 <div class="titulo-secao">
                     <span>Previsões Ativas</span>
@@ -267,6 +271,7 @@
                 </div>
             </section>
 
+            <!-- VISÃO 2: LOJA -->
             <section id="view-loja" class="view-section">
                 <div class="titulo-secao">
                     <button class="btn-nav" onclick="navegarPara('view-enquetes')">← Voltar</button>
@@ -286,6 +291,7 @@
         </main>
     </div>
 
+    <!-- MODAL DE CHECKOUT PIX -->
     <div id="modal-pix" class="pix-modal">
         <div class="pix-modal-content">
             <h3 style="color: white; font-weight: 800;">Pagamento via Pix</h3>
@@ -557,7 +563,8 @@
             const o2 = document.getElementById('adm-poll-opt2').value.trim();
             const minutos = parseInt(document.getElementById('adm-poll-tempo').value.trim());
 
-            if(!pergunta || !o1 || !o2 || isNaN(minutos) || minutes <= 0) {
+            /* CORREÇÃO AQUI: Mudado de 'minutes' para 'minutos' para evitar quebra de script */
+            if(!pergunta || !o1 || !o2 || isNaN(minutos) || minutos <= 0) {
                 alert("Preencha todos os dados da enquete!");
                 return;
             }
