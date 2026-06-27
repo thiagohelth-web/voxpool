@@ -158,9 +158,9 @@
             <div id="painel-adm" style="display: none;">
                 
                 <div class="adm-box" style="border-color: rgba(16, 185, 129, 0.3);">
-                    <div class="adm-section-title" style="color: var(--accent-green)">🛡️ 1. Approval por Token (WhatsApp)</div>
+                    <div class="adm-section-title" style="color: var(--accent-green)">🛡️ 1. Aprovação por Token / ID do Membro (WhatsApp)</div>
                     <div class="adm-validation-zone" style="display: flex; gap: 10px;">
-                        <input type="text" id="adm-token-input" class="form-control" placeholder="Cole o Token recebido...">
+                        <input type="text" id="adm-token-input" class="form-control" placeholder="Cole o ID do Membro (Ex: M-7777)...">
                         <button class="btn-action" style="background: var(--accent-green); width: auto; padding: 0 20px; border-radius: 12px;" onclick="admProcessarToken()">Liberar Moedas</button>
                     </div>
                 </div>
@@ -204,7 +204,7 @@
                     <div class="adm-section-title" style="color: #f59e0b;">⚙️ 4. Modificar Saldo do Membro</div>
                     <div class="adm-row">
                         <div class="form-group" style="flex: 1.5;">
-                            <input type="text" id="adm-membro-codigo" class="form-control" placeholder="Código do Usuário" readonly>
+                            <input type="text" id="adm-membro-codigo" class="form-control" placeholder="Digite o ID do Usuário (Ex: M-7777)">
                         </div>
                         <div class="form-group">
                             <input type="number" id="adm-membro-novo-saldo" class="form-control" placeholder="Qtd Moedas" step="0.01">
@@ -332,7 +332,6 @@
                 let dados = localStorage.getItem('voxpopuli_usuarios');
                 let usuarios = dados ? JSON.parse(dados) : {};
                 
-                // INJEÇÃO AUTOMÁTICA DE CONTA DE TESTE PARA USUÁRIO COMUM SE ESTIVER ZERADO
                 if (!usuarios || Object.keys(usuarios).length === 0) {
                     usuarios = {
                         "teste@membro.com": {
@@ -371,7 +370,7 @@
                 titulo.innerText = "Acesse sua Conta";
                 btnPrincipal.innerText = "Entrar na Conta";
                 camposCadastro.forEach(el => el.style.display = 'none');
-                alternarTexto.innerHTML = 'Não tem conta? <span onclick="alternarModoAuth()">Cadastre-se aqui</span>';
+                alternarTexto.innerHTML = 'Não tem conta? <span onclick="advanced_login()">Cadastre-se aqui</span>';
             }
         }
 
@@ -381,7 +380,6 @@
 
             if(!emailInput || !senhaInput) { alert("Preencha o e-mail e a senha!"); return; }
 
-            // AUTENTICAÇÃO DIRETA DO ADMINISTRADOR MASTER
             if(emailInput === "@admhelth" && senhaInput === "2481") {
                 usuarioLogado = { login: "@admhelth", email: "@admhelth", role: "ADM", codigo: "MASTER-ADM", nome: "Administrador" };
                 logarSucesso();
@@ -414,14 +412,13 @@
                 alert(`Cadastro concluído!\nSeu ID para login: ${codigoGerado}`);
                 alternarModoAuth();
             } else {
-                // VALIDAÇÃO DE LOGIN COM MENSAGENS EXPLICATIVAS DE ERRO
                 if (!bancoUsuarios[emailInput]) {
-                    alert("Esse e-mail não foi encontrado no sistema! Caso tenha limpado o navegador, crie uma nova conta clicando em 'Cadastre-se aqui' abaixo.");
+                    alert("E-mail não encontrado!");
                     return;
                 }
 
                 if (bancoUsuarios[emailInput].senha !== senhaInput) {
-                    alert("Senha incorreta para esse e-mail! Verifique as letras maiúsculas/minúsculas.");
+                    alert("Senha incorreta!");
                     return;
                 }
 
@@ -496,7 +493,6 @@
             document.getElementById('saldo-atual').innerText = Number(saldoUser).toFixed(2);
         }
 
-        /* ENGINE DE TEMPO SEM INTERRUPÇÃO */
         function inicializarLoopCronometros() {
             clearInterval(loopGlobalCronometros);
             let ultimoTimestamp = Date.now();
@@ -561,7 +557,7 @@
             const o2 = document.getElementById('adm-poll-opt2').value.trim();
             const minutos = parseInt(document.getElementById('adm-poll-tempo').value.trim());
 
-            if(!pergunta || !o1 || !o2 || isNaN(minutos) || minutos <= 0) {
+            if(!pergunta || !o1 || !o2 || isNaN(minutos) || minutes <= 0) {
                 alert("Preencha todos os dados da enquete!");
                 return;
             }
@@ -828,33 +824,46 @@
         }
 
         function admAjustarMembroManual() {
-            const cod = document.getElementById('adm-membro-codigo').value;
+            const cod = document.getElementById('adm-membro-codigo').value.trim();
             const novoSaldo = parseFloat(document.getElementById('adm-membro-novo-saldo').value);
-            if(!cod || isNaN(novoSaldo)) return;
+            
+            if(!cod || isNaN(novoSaldo)) {
+                alert("Por favor, preencha o código do membro e o novo saldo!");
+                return;
+            }
+            
             let bancoUsuarios = obterBancoUsuarios();
             const email = Object.keys(bancoUsuarios).find(k => bancoUsuarios[k].codigo === cod);
+            
             if(email) {
                 bancoUsuarios[email].saldo = novoSaldo;
                 localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
                 admAtualizarTabelaMembros();
-                alert("Saldo alterado pelo Administrador!");
+                alert(`Saldo do membro ${cod} alterado com sucesso para ${novoSaldo}!`);
+            } else {
+                alert(`Membro com o código "${cod}" não foi encontrado no sistema.`);
             }
         }
 
         function admProcessarToken() {
             const token = document.getElementById('adm-token-input').value.trim();
-            if(!token) return;
+            if(!token) { alert("Digite ou cole o ID do membro!"); return; }
+            
             let bancoUsuarios = obterBancoUsuarios();
             const email = Object.keys(bancoUsuarios).find(k => bancoUsuarios[k].codigo === token);
+            
             if(email) {
                 const p = bancoUsuarios[email].pendente;
-                if(p <= 0) { alert("Nenhum valor pendente."); return; }
+                if(p <= 0) { alert("Este membro não possui compras pendentes de aprovação!"); return; }
+                
                 bancoUsuarios[email].saldo = (bancoUsuarios[email].saldo || 0) + p;
                 bancoUsuarios[email].pendente = 0;
                 localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
                 document.getElementById('adm-token-input').value = "";
                 admAtualizarTabelaMembros();
-                alert("Moedas liberadas!");
+                alert(`Sucesso! Foram liberadas ${p} moedas para o membro.`);
+            } else {
+                alert("Nenhum usuário encontrado com esse ID/Token!");
             }
         }
 
@@ -872,8 +881,13 @@
         function solicitarLiberacaoPix() {
             if(!pacotePendente) return;
             let bancoUsuarios = obterBancoUsuarios();
-            if(bancoUsuarios[usuarioLogado.login]) { bancoUsuarios[usuarioLogado.login].pendente = pacotePendente.total; localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios)); }
-            const msg = `Olá, envie o comprovante Pix de R$ ${pacotePendente.total.toFixed(2)}. ID Membro: ${usuarioLogado.codigo}`;
+            
+            if(bancoUsuarios[usuarioLogado.login]) { 
+                bancoUsuarios[usuarioLogado.login].pendente = pacotePendente.total; 
+                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios)); 
+            }
+            
+            const msg = `Olá, acabei de fazer um Pix de R$ ${pacotePendente.total.toFixed(2)}. Libera meus créditos? Meu ID: ${usuarioLogado.codigo}`;
             fecharModalPix();
             window.open(`https://api.whatsapp.com/send?phone=5522997184205&text=${encodeURIComponent(msg)}`, '_blank');
         }
