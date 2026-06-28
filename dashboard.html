@@ -1,1 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoxPopuli - Dashboard</title>
+    <style>
+        :root { --bg-main: #0b0f19; --bg-card: #111827; --bg-input: #1f2937; --primary-blue: #2563eb; --accent-green: #10b981; --accent-red: #dc2626; --text-main: #f3f4f6; --text-muted: #9ca3af; --border-color: #374151; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 30px; }
+        .logo { font-size: 24px; font-weight: bold; color: #3b82f6; }
+        .moedas-tag { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent-green); color: var(--accent-green); padding: 5px 15px; border-radius: 20px; font-weight: bold; }
+        .card-previsao { background: linear-gradient(145deg, #1e293b, #111827); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; max-width: 500px; margin: 0 auto 20px auto; }
+        .status-header { text-align: center; margin-bottom: 15px; }
+        .pergunta-txt { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 20px; }
+        .opcao-row { display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); border: 1px solid var(--border-color); padding: 14px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; }
+        .opcao-row.selecionada { border-color: var(--primary-blue); background: rgba(37, 99, 235, 0.1); }
+        input { background: var(--bg-input); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 6px; width: 100%; margin-bottom: 10px; }
+        .btn-blue { background: var(--primary-blue); color: white; border: none; padding: 12px; width:100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .timer-box { border: 1px solid var(--accent-red); border-radius: 8px; padding: 10px; text-align: center; margin-top: 20px; color: var(--accent-red); font-weight: bold; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">VoxPopuli</div>
+        <div style="display:flex; align-items:center; gap:15px;">
+            <div class="moedas-tag" id="saldo-topo">🪙 0.00 Moedas</div>
+            <button onclick="sair()" style="background:#374151; color:white; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">Sair</button>
+        </div>
+    </div>
 
+    <h2 style="text-align:center; margin-bottom:20px; color:var(--text-muted);">Previsões Ativas</h2>
+    <div id="lista-enquetes"></div>
+
+    <script>
+        const SUPABASE_URL = "https://xxxzluqjgqwkpzjjxpbj.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHpsdXFqZ3F3a3B6amp4cGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MTA2NjcsImV4cCI6MjA5ODE4NjY2N30.VzGPY5L8EhKt7-ARJaShpM6mMl8kA2tlRG_S4dtUPzc";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const usuarioLogado = localStorage.getItem('vox_usuario');
+        if(!usuarioLogado || usuarioLogado === 'admin') { window.location.href = 'index.html'; }
+
+        let escolhasLocais = {};
+        let listaEnquetesGlobais = [];
+
+        async function carregarDados() {
+            const { data: membro } = await supabase.from('membros').select('saldo').eq('id', usuarioLogado).single();
+            if(membro) document.getElementById('saldo-topo').innerText = `🪙 ${parseFloat(membro.saldo).toFixed(2)} Moedas`;
+
+            const { data: enquetes } = await supabase.from('enquetes').select('*');
+            listaEnquetesGlobais = enquetes || [];
+            renderizarEnquetes();
+        }
+
+        function renderizarEnquetes() {
+            const container = document.getElementById('lista-enquetes');
+            container.innerHTML = '';
+
+            if(listaEnquetesGlobais.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:var(--text-muted);">Nenhuma enquete ativa encontrada.</p>`;
+                return;
+            }
+
+            listaEnquetesGlobais.forEach(enq => {
+                let txtTendencia = "Aguardando palpites...";
+                let corTendencia = "var(--text-muted)";
+                const v1 = parseFloat(enq.votos_opt1);
+                const v2 = parseFloat(enq.votos_opt2);
+
+                if(v1 > v2) { txtTendencia = `📈 Liderando: ${enq.opt1}`; corTendencia = "var(--accent-green)"; }
+                else if(v2 > v1) { txtTendencia = `📈 Liderando: ${enq.opt2}`; corTendencia = "var(--accent-green)"; }
+                else if(v1 > 0 && v1 === v2) { txtTendencia = "Empate Técnico!"; corTendencia = "#f59e0b"; }
+
+                const selecionada = escolhasLocais[enq.id];
+
+                const card = document.createElement('div');
+                card.className = 'card-previsao';
+                card.innerHTML = `
+                    <div class="status-header">
+                        <div style="color:${corTendencia}; font-weight:bold;">${txtTendencia}</div>
+                    </div>
+                    <div class="pergunta-txt">${enq.pergunta}</div>
+                    <div class="opcao-row ${selecionada === 'opt1' ? 'selecionada' : ''}" onclick="escolhasLocais['${enq.id}']='opt1'; renderizarEnquetes();">
+                        <span>${enq.opt1}</span><span>🪙 ${v1}</span>
+                    </div>
+                    <div class="opcao-row ${selecionada === 'opt2' ? 'selecionada' : ''}" onclick="escolhasLocais['${enq.id}']='opt2'; renderizarEnquetes();">
+                        <span>${enq.opt2}</span><span>🪙 ${v2}</span>
+                    </div>
+                    <div style="margin-top:15px;">
+                        <input type="number" id="voto-${enq.id}" value="1" min="1">
+                        <button class="btn-blue" onclick="confirmarVoto('${enq.id}')">Confirmar Palpite</button>
+                    </div>
+                    <div class="timer-box" id="clock-${enq.id}">00:00:00</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function confirmarVoto(idEnquete) {
+            const escolha = escolhasLocais[idEnquete];
+            const valor = parseFloat(document.getElementById(`voto-${idEnquete}`).value);
+
+            if(!escolha) { alert("Selecione uma opção!"); return; }
+            if(isNaN(valor) || valor <= 0) { alert("Insira um valor válido!"); return; }
+
+            const { data: m } = await supabase.from('membros').select('saldo').eq('id', usuarioLogado).single();
+            if(m.saldo < valor) { alert("Saldo insuficiente!"); return; }
+
+            const enq = listaEnquetesGlobais.find(e => e.id === idEnquete);
+            if(new Date() > new Date(enq.fim)) { alert("Tempo esgotado!"); return; }
+
+            const novoSaldo = parseFloat(m.saldo) - valor;
+            const campoVoto = escolha === 'opt1' ? 'votos_opt1' : 'votos_opt2';
+            const novoVotoSoma = parseFloat(enq[campoVoto]) + valor;
+
+            await supabase.from('membros').update({ saldo: novoSaldo }).eq('id', usuarioLogado);
+            await supabase.from('enquetes').update({ [campoVoto]: novoVotoSoma }).eq('id', idEnquete);
+
+            alert("Palpite registrado!");
+            carregarDados();
+        }
+
+        function sair() { localStorage.clear(); window.location.href = 'index.html'; }
+
+        setInterval(carregarDados, 4000); 
+        setInterval(() => {
+            listaEnquetesGlobais.forEach(enq => {
+                const diff = new Date(enq.fim) - new Date();
+                const div = document.getElementById(`clock-${enq.id}`);
+                if(!div) return;
+                if(diff > 0) {
+                    const hrs = String(Math.floor(diff / 3600000)).padStart(2, '0');
+                    const mins = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+                    const segs = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+                    div.innerText = `${hrs}:${mins}:${segs}`;
+                } else { div.innerText = "TEMPO ESGOTADO"; }
+            });
+        }, 1000);
+
+        carregarDados();
+    </script>
+</body>
+</html>
