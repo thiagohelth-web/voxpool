@@ -88,9 +88,8 @@
                 }
 
                 enquetes.forEach(enq => {
-                    // CORREÇÃO: Mapeamento flexível para evitar exibir "undefined"
-                    const o1 = enq.opcao1 || enq.op1 || "Opção 1";
-                    const o2 = enq.opcao2 || enq.op2 || "Opção 2";
+                    const o1 = enq.opcao1 || enq.opcao_1 || enq.op1 || enq.opcaoA || enq.opcao_a || "Opção 1";
+                    const o2 = enq.opcao2 || enq.opcao_2 || enq.op2 || enq.opcaoB || enq.opcao_b || "Opção 2";
 
                     tabela.innerHTML += `
                         <tr>
@@ -110,12 +109,15 @@
 
             if(!p || !o1 || !o2) { alert("Preencha todos os campos!"); return; }
 
-            // CORREÇÃO: Tenta inserir usando as duas nomenclaturas possíveis de coluna para evitar erros de estrutura
-            const dadosInsercao = { pergunta: p };
-            
-            // Define dinamicamente baseado no que sua tabela aceita
-            dadosInsercao.opcao1 = o1; dadosInsercao.opcao2 = o2;
-            dadosInsercao.op1 = o1; dadosInsercao.op2 = o2;
+            // Insere preenchendo todos os formatos possíveis de coluna para garantir compatibilidade com a sua tabela
+            const dadosInsercao = { 
+                pergunta: p,
+                opcao1: o1, opcao2: o2,
+                opcao_1: o1, opcao_2: o2,
+                op1: o1, op2: o2,
+                opcaoA: o1, opcaoB: o2,
+                opcao_a: o1, opcao_b: o2
+            };
 
             const { error } = await clientSupabase.from('enquetes').insert([dadosInsercao]);
             if(error) { alert("Erro ao salvar: " + error.message); } 
