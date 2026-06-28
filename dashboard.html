@@ -77,16 +77,16 @@
                 }
 
                 enquetes.forEach(enq => {
-                    // CORREÇÃO: Tenta ler 'opcao1' ou 'op1' (e 'opcao2' ou 'op2') para garantir compatibilidade com sua tabela
-                    const o1 = enq.opcao1 || enq.op1 || "Opção 1";
-                    const o2 = enq.opcao2 || enq.op2 || "Opção 2";
+                    // MAPEAMENTO ULTRA-FLEXÍVEL: Procura por qualquer nome de coluna comum para a Opção 1 e 2
+                    const o1 = enq.opcao1 || enq.opcao_1 || enq.op1 || enq.opcaoA || enq.opcao_a || "Opção 1";
+                    const o2 = enq.opcao2 || enq.opcao_2 || enq.op2 || enq.opcaoB || enq.opcao_b || "Opção 2";
 
                     lista.innerHTML += `
                         <div class="enquete-card">
                             <h3 style="margin-bottom:15px;">${enq.pergunta}</h3>
                             <div class="botoes-voto">
-                                <button class="btn-voto" onclick="votar('${enq.id}', 1)">${o1}</button>
-                                <button class="btn-voto" onclick="votar('${enq.id}', 2)">${o2}</button>
+                                <button class="btn-voto" onclick="votar('${enq.id}', '${o1}')">${o1}</button>
+                                <button class="btn-voto" onclick="votar('${enq.id}', '${o2}')">${o2}</button>
                             </div>
                         </div>
                     `;
@@ -94,8 +94,8 @@
             } catch (err) { console.error(err); }
         }
 
-        async function votar(enqueteId, opcaoNum) {
-            alert("Voto registrado com sucesso na opção " + opcaoNum + "!");
+        async function votar(enqueteId, nomeOpcao) {
+            alert("Voto registado com sucesso em: " + nomeOpcao);
         }
 
         carregarDados();
