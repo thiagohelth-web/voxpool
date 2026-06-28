@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoxPopuli - ADM Central</title>
+    <style>
+        :root { --bg-main: #0b0f19; --bg-card: #111827; --bg-input: #1f2937; --primary-blue: #2563eb; --accent-green: #10b981; --accent-red: #dc2626; --text-main: #f3f4f6; --text-muted: #9ca3af; --border-color: #374151; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 30px; }
+        .secao-container { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 25px; }
+        .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        input { background-color: var(--bg-input); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 6px; width: 100%; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border-color); }
+        .btn-blue { background: var(--primary-blue); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-red { background: var(--accent-red); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="header">
+        <h2 style="color:#2563eb;">VoxPopuli Central [ADM]</h2>
+        <button onclick="localStorage.clear(); window.location.href='index.html';" style="background:#374151; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">Sair</button>
+    </div>
+
+    <!-- CRIAR ENQUETE -->
+    <div class="secao-container">
+        <h3 style="margin-bottom:15px;">📝 Injetar Nova Enquete</h3>
+        <div class="grid-inputs">
+            <input type="text" id="adm-pergunta" placeholder="Pergunta da enquete">
+            <input type="text" id="adm-opt1" placeholder="Opção 1">
+            <input type="text" id="adm-opt2" placeholder="Opção 2">
+            <input type="number" id="adm-tempo" placeholder="Duração em Minutos">
+        </div>
+        <button class="btn-blue" style="width:100%;" onclick="injetarEnquete()">Injetar Enquete na Nuvem</button>
+    </div>
+
+    <!-- LISTA ENQUETES -->
+    <div class="secao-container" style="border-color: var(--accent-red);">
+        <h3 style="margin-bottom:15px; color:#f87171;">🎲 Controle de Enquetes Injetadas</h3>
+        <table>
+            <thead>
+                <tr><th>ID</th><th>Pergunta</th><th>Votos (O1 / O2)</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="tabela-enquetes"></tbody>
+        </table>
+    </div>
+
+    <!-- ALTERAR SALDO -->
+    <div class="secao-container">
+        <h3 style="margin-bottom:15px;">⚙️ Modificar Saldo do Membro</h3>
+        <div class="grid-inputs">
+            <input type="text" id="membro-id" placeholder="ID do Usuário">
+            <input type="number" id="membro-saldo" placeholder="Quantidade de Moedas">
+        </div>
+        <button class="btn-blue" style="width:100%; background:#7c2d12;" onclick="modificarSaldo()">Salvar Novo Saldo</button>
+    </div>
+
+    <!-- LISTA MEMBROS -->
+    <div class="secao-container">
+        <h3 style="margin-bottom:15px;">👥 Membros Registrados</h3>
+        <table>
+            <thead>
+                <tr><th>ID Membro</th><th>Saldo Atual</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="tabela-membros"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://xxxzluqjgqwkpzjjxpbj.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHpsdXFqZ3F3a3B6amp4cGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MTA2NjcsImV4cCI6MjA5ODE4NjY2N30.VzGPY5L8EhKt7-ARJaShpM6mMl8kA2tlRG_S4dtUPzc";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        if(localStorage.getItem('vox_usuario') !== 'admin') { window.location.href = 'index.html'; }
+
+        async function carregarPainel() {
+            const { data: enquetes } = await supabase.from('enquetes').select('*');
+            const tEnq = document.getElementById('tabela-enquetes');
+            tEnq.innerHTML = '';
+            (enquetes || []).forEach(e => {
+                tEnq.innerHTML += `<tr><td><b>${e.id}</b></td><td>${e.pergunta}</td><td>O1: ${e.votos_opt1} | O2: ${e.votos_opt2}</td><td><button class="btn-red" onclick="excluirEnquete('${e.id}')">Excluir</button></td></tr>`;
+            });
+
+            const { data: membros } = await supabase.from('membros').select('*');
+            const tMem = document.getElementById('tabela-membros');
+            tMem.innerHTML = '';
+            (membros || []).forEach(m => {
+                if(m.id === 'admin') return;
+                tMem.innerHTML += `<tr><td>${m.id}</td><td style="color:#10b981; font-weight:bold;">R$ ${parseFloat(m.saldo).toFixed(2)}</td><td><button class="btn-red" onclick="excluirMembro('${m.id}')">Excluir</button></td></tr>`;
+            });
+        }
+
+        async function injetarEnquete() {
+            const pergunta = document.getElementById('adm-pergunta').value;
+            const opt1 = document.getElementById('adm-opt1').value;
+            const opt2 = document.getElementById('adm-opt2').value;
+            const minutos = parseInt(document.getElementById('adm-tempo').value);
+
+            if(!pergunta || !opt1 || !opt2 || !minutos) return alert("Preencha tudo!");
+
+            const id = "E-" + Math.floor(100 + Math.random() * 900);
+            const fim = new Date(Date.now() + minutos * 60000).toISOString();
+
+            await supabase.from('enquetes').insert([{ id, pergunta, opt1, opt2, fim }]);
+            carregarPainel();
+        }
+
+        async function excluirEnquete(id) {
+            if(confirm("Excluir essa enquete da nuvem?")) {
+                await supabase.from('enquetes').delete().eq('id', id);
+                carregarPainel();
+            }
+        }
+
+        async function modificarSaldo() {
+            const id = document.getElementById('membro-id').value.trim();
+            const saldo = parseFloat(document.getElementById('membro-saldo').value);
+            if(!id || isNaN(saldo)) return alert("Preencha tudo!");
+
+            await supabase.from('membros').update({ saldo }).eq('id', id);
+            carregarPainel();
+        }
+
+        async function excluirMembro(id) {
+            if(confirm("Banir e excluir este membro da nuvem?")) {
+                await supabase.from('membros').delete().eq('id', id);
+                carregarPainel();
+            }
+        }
+
+        setInterval(carregarPainel, 4000);
+        carregarPainel();
+    </script>
+</body>
+</html>
