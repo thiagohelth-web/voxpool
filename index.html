@@ -92,11 +92,18 @@
     </div>
 
     <script>
+        // ATENÇÃO: Certifique-se de que estas chaves abaixo condizem com as do seu painel Supabase
         const SUPABASE_URL = "https://xxxzluqjgqwkpzjjxpbj.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHpsdXFqZ3F3a3B6amp4cGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MTA2NjcsImV4cCI6MjA5ODE4NjY2N30.VzGPY5L8EhKt7-ARJaShpM6mMl8kA2tlRG_S4dtUPzc";
         
-        // CORREÇÃO AQUI: Mudado para 'supabase.createClient' com o 's' minúsculo chamando o objeto global correto da CDN
-        const clientSupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let clientSupabase = null;
+        
+        // Inicializa o Supabase tratando possíveis erros de credenciais
+        try {
+            clientSupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (e) {
+            console.error("Erro ao inicializar Supabase:", e);
+        }
 
         let modoCadastro = false;
 
@@ -119,7 +126,7 @@
             }
         }
 
-        async function ejecutarAcao() {
+        async function executarAcao() {
             const userIn = document.getElementById('usuario').value.trim();
             const passIn = document.getElementById('senha').value.trim();
 
@@ -128,40 +135,63 @@
                 return;
             }
 
-            // LOGIN DE ADMINISTRADOR
+            // LOGIN DE ADMINISTRADOR LOCAL (Ignora falhas de conexão para garantir o seu acesso)
             if(!modoCadastro && userIn === 'admin' && passIn === 'admin123') {
                 localStorage.setItem('vox_usuario', 'admin');
                 window.location.href = 'adm.html';
                 return;
             }
 
-            if(modoCadastro) {
-                if(userIn === 'admin') { alert("Nome 'admin' é reservado!"); return; }
+            // Se for tentar usar o banco e o client falhou na inicialização
+            if(!clientSupabase) {
+                alert("Erro de conexão: O banco de dados Supabase não foi configurado corretamente.");
+                return;
+            }
 
-                // Verifica se usuário já existe
-                const { data: existente } = await clientSupabase.from('membros').select('id').eq('id', userIn).maybeSingle();
-                if(existente) {
-                    alert("Este ID de usuário já está sendo usado!");
-                    return;
+            if(modoCadastro) {
+                // Impede criação de contas maliciosas ou erradas com o ID admin
+                if(userIn.toLowerCase() === 'admin') { 
+                    alert("O nome 'admin' é reservado e não pode ser cadastrado!"); 
+                    return; 
                 }
 
-                // Insere novo membro
-                const { error } = await clientSupabase.from('membros').insert([{ id: userIn, senha: passIn, saldo: 100.00 }]);
-                if(error) {
-                    alert("Erro ao cadastrar: " + error.message);
-                } else {
+                try {
+                    // Verifica se usuário já existe
+                    const { data: existente, error: errCheck } = await clientSupabase.from('membros').select('id').eq('id', userIn).maybeSingle();
+                    
+                    if(errCheck) throw errCheck;
+
+                    if(existente) {
+                        alert("Este ID de usuário já está sendo usado!");
+                        return;
+                    }
+
+                    // Insere novo membro
+                    const { error: errInsert } = await clientSupabase.from('membros').insert([{ id: userIn, senha: passIn, saldo: 100.00 }]);
+                    
+                    if(errInsert) throw errInsert;
+
                     alert("Cadastro realizado com sucesso! Ganhou 100 moedas de bônus.");
                     toggleModo();
+                    
+                } catch (error) {
+                    alert("Erro retornado pelo Supabase: " + (error.message || error));
                 }
             } else {
-                // REGRA DE LOGIN DO MEMBRO
-                const { data: membro, error } = await clientSupabase.from('membros').select('*').eq('id', userIn).maybeSingle();
-                
-                if(!membro || membro.senha !== passIn) {
-                    alert("ID de usuário ou senha incorretos!");
-                } else {
-                    localStorage.setItem('vox_usuario', membro.id);
-                    window.location.href = 'dashboard.html';
+                try {
+                    // REGRA DE LOGIN DO MEMBRO COMUM
+                    const { data: membro, error: errLogin } = await clientSupabase.from('membros').select('*').eq('id', userIn).maybeSingle();
+                    
+                    if(errLogin) throw errLogin;
+
+                    if(!membro || membro.senha !== passIn) {
+                        alert("ID de usuário ou senha incorretos!");
+                    } else {
+                        localStorage.setItem('vox_usuario', membro.id);
+                        window.location.href = 'dashboard.html';
+                    }
+                } catch (error) {
+                    alert("Erro ao conectar para Login: " + (error.message || error));
                 }
             }
         }
