@@ -3,915 +3,569 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxPopuli - Sistema de Múltiplas Previsões</title>
+    <title>VoxPopuli - Painel Unificado</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
         :root {
-            --bg-principal: #0d0e12;
-            --bg-card: #15171e;
-            --bg-input: #1e222b;
-            --bg-hover: #262936;
-            --accent-blue: #3b82f6;
+            --bg-main: #0b0f19;
+            --bg-card: #111827;
+            --bg-input: #1f2937;
+            --primary-blue: #2563eb;
             --accent-green: #10b981;
-            --accent-red: #ef4444;
-            --accent-warning: #f59e0b;
-            --border-color: #2d3242;
+            --accent-red: #dc2626;
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
+            --border-color: #374151;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg-principal); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-        /* AUTENTICAÇÃO */
-        .auth-container { max-width: 450px; width: 100%; margin: auto; padding: 32px 24px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-        .auth-logo { font-size: 28px; font-weight: 800; color: var(--accent-blue); text-align: center; margin-bottom: 24px; }
-        .auth-logo span { color: var(--accent-green); }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
-        .form-control { width: 100%; background: var(--bg-input); border: 1px solid var(--border-color); padding: 14px; border-radius: 12px; color: white; font-size: 15px; outline: none; }
-        .form-control:focus { border-color: var(--accent-blue); }
-        .auth-switch { text-align: center; margin-top: 16px; font-size: 14px; color: var(--text-muted); }
-        .auth-switch span { color: var(--accent-blue); cursor: pointer; font-weight: 600; }
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 20px;
+        }
 
-        /* NAVEGAÇÃO */
-        nav { background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 16px 24px; position: sticky; top: 0; z-index: 100; }
-        .nav-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 22px; font-weight: 800; color: var(--accent-blue); letter-spacing: -0.5px; cursor: pointer; }
-        .logo span { color: var(--accent-green); }
-        .menu-direita { display: flex; align-items: center; gap: 12px; }
-        .wallet-badge { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; color: var(--accent-green); }
-        .member-badge { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 20px; font-size: 11px; color: var(--text-muted); font-weight: 600; }
-        .btn-nav { background-color: var(--bg-input); color: white; border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 20px; font-weight: 600; font-size: 13px; cursor: pointer; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 30px;
+        }
 
-        /* PAINEL ADM CONTÊNERES */
-        .adm-box { background: rgba(59, 130, 246, 0.03); border: 1px solid var(--border-color); border-radius: 20px; padding: 20px; margin-bottom: 24px; }
-        .adm-section-title { font-size: 14px; font-weight: 700; color: var(--accent-blue); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;}
-        .adm-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-        .adm-row .form-group { flex: 1; min-width: 120px; margin-bottom: 0; }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3b82f6;
+        }
 
-        /* TABELA DE MEMBROS E ENQUETES */
-        .table-container { overflow-x: auto; margin-top: 10px; background: var(--bg-input); border-radius: 12px; border: 1px solid var(--border-color); }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; white-space: nowrap; }
-        th, td { padding: 12px; border-bottom: 1px solid var(--border-color); }
-        th { background: rgba(255, 255, 255, 0.02); font-weight: 600; color: var(--text-muted); }
-        .btn-table-action { background: var(--accent-blue); border: none; color: white; padding: 6px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; margin-right: 4px; }
+        .logo span {
+            color: var(--accent-green);
+        }
 
-        /* CONTEÚDO */
-        main { max-width: 850px; width: 100%; margin: 0 auto; padding: 24px 16px; flex: 1; }
-        .view-section { display: none; }
-        .view-section.active { display: block; }
-        .titulo-secao { font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .user-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
-        /* LISTA DE ENQUETES NO CLIENTE */
-        .polls-container { display: flex; flex-direction: column; gap: 24px; }
-        .poll-card { background: var(--bg-card); border-radius: 24px; border: 1px solid var(--border-color); padding: 24px; }
-        
-        /* CONTAINER FLEX EM DUAS COLUNAS */
-        .poll-layout-wrapper { display: flex; gap: 24px; align-items: stretch; flex-wrap: wrap; }
-        .poll-main-content { flex: 1; min-width: 280px; display: flex; flex-direction: column; justify-content: space-between; }
-        
-        /* BLOCO DO CRONÔMETRO LATERAL */
-        .poll-side-timer { width: 200px; min-width: 180px; background: #000; border: 2px solid var(--accent-green); border-radius: 20px; padding: 24px 16px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: auto; }
-        .poll-side-timer.active-timer { border-color: var(--accent-green); box-shadow: 0 0 15px rgba(16, 185, 129, 0.15); color: var(--accent-green); }
-        .poll-side-timer.paused-timer { border-color: var(--accent-warning); box-shadow: 0 0 15px rgba(245, 158, 11, 0.15); color: var(--accent-warning); }
-        .poll-side-timer.ended-timer { border-color: var(--accent-red); box-shadow: 0 0 15px rgba(239, 68, 68, 0.15); color: var(--accent-red); }
-        
-        .side-timer-title { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 800; }
-        .side-timer-clock { font-family: monospace; font-size: 22px; font-weight: 900; letter-spacing: 1px; color: #fff; background: var(--bg-input); padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border-color); width: 100%; margin-top: 6px; }
+        .moedas-tag {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
 
-        /* MONITORAMENTO */
-        .status-andamento-box { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 14px; padding: 12px; text-align: center; margin-bottom: 16px; }
-        .status-andamento-titulo { font-size: 10px; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.5px; }
-        .status-andamento-lider { font-size: 14px; font-weight: 700; color: var(--accent-green); }
+        .btn-blue {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
-        .options-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
-        .option-label { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 14px; padding: 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s ease; }
-        .option-label.selected { border-color: var(--accent-blue); background: rgba(59, 130, 246, 0.1); }
-        .btn-action { width: 100%; background: var(--accent-blue); color: white; border: none; border-radius: 14px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
-        .btn-action:disabled { background: #2d3242; color: #6b7280; cursor: not-allowed; }
-        
-        /* FINANCEIRO */
-        .saque-detalhes-container { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
-        .saque-linha-info { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-        .saque-linha-info:last-child { margin-bottom: 0; padding-top: 8px; border-top: 1px dashed var(--border-color); }
+        .btn-red {
+            background-color: var(--accent-red);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
-        .pix-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
-        .pix-modal-content { background: var(--bg-card); border: 1px solid var(--border-color); padding: 24px; border-radius: 24px; max-width: 450px; width: 100%; text-align: center; }
-        .pix-key-box { background: var(--bg-input); border: 1px dashed var(--accent-green); padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; color: var(--accent-green); margin: 16px 0; word-break: break-all; }
+        .secao-container {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .secao-titulo {
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .grid-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        input, select {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 6px;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .card-previsao {
+            background: linear-gradient(145deg, #1e293b, #111827);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto 20px auto;
+        }
+
+        .status-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .status-tag {
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .tendencia-txt {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .pergunta-txt {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .opcao-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .opcao-row.selecionada {
+            border-color: var(--primary-blue);
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .timer-box {
+            border: 1px solid var(--accent-red);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .timer-title {
+            color: var(--accent-red);
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .timer-clock {
+            font-size: 24px;
+            font-family: monospace;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
-    <!-- VISÃO 0: TELA DE LOGIN / CADASTRO -->
-    <div id="view-auth" class="view-section active" style="display: flex; min-height: 100vh; width: 100%;">
-        <div class="auth-container">
-            <div class="auth-logo">Vox<span>Populi</span></div>
-            <h3 id="auth-titulo" style="text-align: center; margin-bottom: 20px; font-size: 16px;">Acesse sua Conta</h3>
-            <div id="auth-forms">
-                <div class="form-group campo-cadastro" style="display: none;">
-                    <label>Nome Completo</label>
-                    <input type="text" id="auth-nome" class="form-control" placeholder="Seu nome completo">
-                </div>
-                <div class="form-group">
-                    <label id="label-login-email">E-mail</label>
-                    <input type="email" id="auth-email" class="form-control" placeholder="Ex: seuemail@dominio.com">
-                </div>
-                <div class="form-group campo-cadastro" style="display: none;">
-                    <label>WhatsApp</label>
-                    <input type="text" id="auth-whatsapp" class="form-control" placeholder="Ex: (22) 99999-9999">
-                </div>
-                <div class="form-group campo-cadastro" style="display: none;">
-                    <label>CPF</label>
-                    <input type="text" id="auth-cpf" class="form-control" placeholder="000.000.000-00">
-                </div>
-                <div class="form-group campo-cadastro" style="display: none;">
-                    <label>Chave Pix para Recebimento</label>
-                    <input type="text" id="auth-chavepix" class="form-control" placeholder="CPF, Celular, E-mail ou Aleatória">
-                </div>
-                <div class="form-group">
-                    <label>Senha</label>
-                    <input type="password" id="auth-senha" class="form-control" placeholder="••••••••">
-                </div>
-                <button class="btn-action" style="margin-top: 10px;" id="btn-auth-principal" onclick="executarAutenticacao()">Entrar na Conta</button>
-                <div class="auth-switch" id="btn-alternar-auth">
-                    Não tem conta? <span onclick="alternarModoAuth()">Cadastre-se aqui</span>
-                </div>
-            </div>
+    <div class="header">
+        <div class="logo">Vox<span>Populi</span> [ADM]</div>
+        <div class="user-status">
+            <div class="moedas-tag" id="saldo-topo">🪙 0.00 Moedas</div>
+            <button class="btn-blue">Comprar Moedas</button>
+            <button class="btn-red" style="background:#374151;">Sair</button>
         </div>
     </div>
 
-    <!-- ESTRUTURA DO SITE PRINCIPAL -->
-    <div id="app-conteudo" style="display: none; flex-direction: column; min-height: 100vh;">
-        <nav>
-            <div class="nav-container">
-                <div class="logo" onclick="navegarPara('view-enquetes')">Vox<span>Populi</span></div>
-                <div class="menu-direita">
-                    <div class="member-badge" id="badge-codigo-membro" style="display:none;">ID: -</div>
-                    <div class="wallet-badge">🪙 <span id="saldo-atual">0.00</span> Moedas</div>
-                    <button class="btn-nav" style="background: var(--accent-blue);" onclick="navegarPara('view-loja')">+ Comprar Moedas</button>
-                    <button class="btn-nav" onclick="fazerLogout()">Sair</button>
-                </div>
-            </div>
-        </nav>
-
-        <main>
-            <!-- ÁREA EXCLUSIVA DO ADMINISTRADOR -->
-            <div id="painel-adm" style="display: none;">
-                
-                <div class="adm-box" style="border-color: rgba(16, 185, 129, 0.3);">
-                    <div class="adm-section-title" style="color: var(--accent-green)">🛡️ 1. Aprovação por Token / ID do Membro (WhatsApp)</div>
-                    <div class="adm-validation-zone" style="display: flex; gap: 10px;">
-                        <input type="text" id="adm-token-input" class="form-control" placeholder="Cole o ID do Membro (Ex: M-7777)...">
-                        <button class="btn-action" style="background: var(--accent-green); width: auto; padding: 0 20px; border-radius: 12px;" onclick="admProcessarToken()">Liberar Moedas</button>
-                    </div>
-                </div>
-
-                <div class="adm-box" style="border-color: rgba(59, 130, 246, 0.3);">
-                    <div class="adm-section-title">📝 2. Injetar Nova Enquete Ativa na Plataforma</div>
-                    <div class="form-group" style="margin-bottom: 10px;">
-                        <input type="text" id="adm-poll-pergunta" class="form-control" placeholder="Escreva a pergunta da enquete">
-                    </div>
-                    <div class="adm-row">
-                        <div class="form-group"><input type="text" id="adm-poll-opt1" class="form-control" placeholder="Opção 1"></div>
-                        <div class="form-group"><input type="text" id="adm-poll-opt2" class="form-control" placeholder="Opção 2"></div>
-                    </div>
-                    <div class="form-group" style="margin-top: 10px;">
-                        <label style="color: var(--accent-blue); font-weight: 600;">Tempo de Duração (em minutos):</label>
-                        <input type="number" id="adm-poll-tempo" class="form-control" placeholder="Ex: 60" min="1">
-                    </div>
-                    <button class="btn-action" style="margin-top: 12px; background: var(--accent-blue);" onclick="admCriarNovaEnquete()">Injetar Enquete na Plataforma</button>
-                </div>
-
-                <div class="adm-box" style="border-color: rgba(239, 68, 68, 0.4);">
-                    <div class="adm-section-title" style="color: var(--accent-red)">🎛️ 3. Controle Individual das Enquetes Injetadas</div>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Pergunta</th>
-                                    <th>Tempo</th>
-                                    <th>Status</th>
-                                    <th>Votos (O1 / O2)</th>
-                                    <th>Ações de Controle</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adm-tabela-enquetes-corpo"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="adm-box" style="border-color: rgba(245, 158, 11, 0.3);" id="modulo-correcao-membro">
-                    <div class="adm-section-title" style="color: #f59e0b;">⚙️ 4. Modificar Saldo do Membro</div>
-                    <div class="adm-row">
-                        <div class="form-group" style="flex: 1.5;">
-                            <input type="text" id="adm-membro-codigo" class="form-control" placeholder="Digite o ID do Usuário (Ex: M-7777)">
-                        </div>
-                        <div class="form-group">
-                            <input type="number" id="adm-membro-novo-saldo" class="form-control" placeholder="Qtd Moedas" step="0.01">
-                        </div>
-                    </div>
-                    <button class="btn-action" style="margin-top: 12px; background: #d97706;" onclick="admAjustarMembroManual()">Salvar Moedas do Cliente</button>
-                </div>
-
-                <div class="adm-box" style="border-color: rgba(255, 255, 255, 0.15);">
-                    <div class="adm-section-title" style="color: #f3f4f6;">👥 5. Lista Completa de Membros Registrados</div>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nome</th>
-                                    <th>E-mail</th>
-                                    <th>WhatsApp</th>
-                                    <th>CPF</th>
-                                    <th>Moedas</th>
-                                    <th>Dep. Pendente</th>
-                                    <th>Saque Solicitado</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adm-tabela-membros-corpo"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- VISÃO 1: ENQUETES (PAINEL DO CLIENTE) -->
-            <section id="view-enquetes" class="view-section">
-                <div class="titulo-secao">
-                    <span>Previsões Ativas</span>
-                    <div style="text-align: right;">
-                        <span id="badge-pendente" style="font-size: 11px; color: #f59e0b; font-weight: 600; display: none;">⏳ Depósito aguardando aprovação...</span>
-                        <span id="badge-saque-pendente" style="font-size: 11px; color: #3b82f6; font-weight: 600; display: none;">⏱️ Saque em processamento...</span>
-                    </div>
-                </div>
-
-                <div id="lista-enquetes-cliente" class="polls-container"></div>
-                
-                <div id="financeiro-membro-box" style="margin-top:32px; padding-top:20px; border-top:1px solid var(--border-color); display:none;">
-                    <div style="font-size: 14px; font-weight:700; margin-bottom:12px; color:var(--text-main)">Painel de Retirada (Pix)</div>
-                    <div class="saque-detalhes-container">
-                        <div class="saque-linha-info">
-                            <span>Saldo Disponível (Bruto):</span>
-                            <span style="font-weight:700; color:#fff">🪙 <span id="saque-txt-bruto">0.00</span></span>
-                        </div>
-                        <div class="saque-linha-info" style="color:var(--accent-red)">
-                            <span>Taxa Adm do Site (3%):</span>
-                            <span>- R$ <span id="saque-txt-taxa">0.00</span></span>
-                        </div>
-                        <div class="saque-linha-info" style="color:var(--accent-green); font-size:15px; font-weight:700;">
-                            <span>Valor Líquido a Receber:</span>
-                            <span>R$ <span id="saque-txt-liquido">0.00</span></span>
-                        </div>
-                    </div>
-                    <button class="btn-action" style="background:var(--accent-green); color:white; border:none; padding:12px;" onclick="solicitarSaqueMembro()">💸 Solicitar Saque via Pix</button>
-                </div>
-            </section>
-
-            <!-- VISÃO 2: LOJA -->
-            <section id="view-loja" class="view-section">
-                <div class="titulo-secao">
-                    <button class="btn-nav" onclick="navegarPara('view-enquetes')">← Voltar</button>
-                    <span>Comprar Moedas</span>
-                </div>
-                <div class="poll-card">
-                    <p style="font-size:14px; color:var(--text-muted); margin-bottom:16px; text-align:center;">
-                        Insira abaixo o valor em reais que deseja comprar. <br>Cada <b>R$ 1,00 = 1 Moeda</b>.
-                    </p>
-                    <div class="form-group">
-                        <label>Valor de Moedas (Mínimo de 9 moedas / R$ 9,00):</label>
-                        <input type="number" id="store-input-reais" class="form-control" value="9" min="9" placeholder="Ex: 9, 15, 50">
-                    </div>
-                    <button class="btn-action" style="background:var(--accent-green); margin-top:10px;" onclick="gerarCheckoutLoja()">Gerar Pix de Moedas</button>
-                </div>
-            </section>
-        </main>
+    <!-- SEÇÃO 2: INJETAR ENQUETE -->
+    <div class="secao-container">
+        <div class="secao-titulo">📝 2. INJETAR NOVA ENQUETE</div>
+        <div class="grid-inputs">
+            <input type="text" id="adm-pergunta" placeholder="Digite a pergunta da enquete...">
+            <input type="text" id="adm-opt1" placeholder="Opção 1">
+            <input type="text" id="adm-opt2" placeholder="Opção 2">
+            <input type="number" id="adm-tempo" placeholder="Tempo de Duração (em minutos). Ex: 60">
+        </div>
+        <button class="btn-blue" style="width: 100%; padding: 12px;" onclick="admInjetarEnquete()">Injetar Enquete na Plataforma</button>
     </div>
 
-    <!-- MODAL DE CHECKOUT PIX -->
-    <div id="modal-pix" class="pix-modal">
-        <div class="pix-modal-content">
-            <h3 style="color: white; font-weight: 800;">Pagamento via Pix</h3>
-            <p style="font-size: 14px; color: var(--text-muted); margin-top: 8px;">Transfira o valor exato para a nossa chave:</p>
-            <div class="pix-key-box">tssnbshrs@gmail.com</div>
-            <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; border: 1px solid var(--border-color); text-align: left;">
-                <div style="display:flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span>Moedas a Receber:</span><span id="modal-info-qtd" style="font-weight:700;">-</span>
-                </div>
-                <div style="display:flex; justify-content: space-between; color: var(--accent-green); margin-bottom: 4px;">
-                    <span>Valor em Dinheiro:</span><span id="modal-info-preco" style="font-weight:700;">-</span>
-                </div>
-            </div>
-            <button class="btn-action" style="background: var(--accent-green);" onclick="solicitarLiberacaoPix()">📱 Notificar Pagamento no WhatsApp</button>
-            <button class="btn-nav" style="margin-top: 12px; width: 100%; border: none;" onclick="fecharModalPix()">Cancelar</button>
+    <!-- SEÇÃO 3: CONTROLE INDIVIDUAL DAS ENQUETES -->
+    <div class="secao-container" style="border-color: var(--accent-red);">
+        <div class="secao-titulo" style="color: #f87171;">🎲 3. CONTROLE INDIVIDUAL DAS ENQUETES INJETADAS</div>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Pergunta</th>
+                        <th>Tempo Restante</th>
+                        <th>Votos (O1 / O2)</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-enquetes-adm">
+                    <!-- Gerado via JS -->
+                </tbody>
+            </table>
         </div>
+    </div>
+
+    <!-- SEÇÃO 4: MODIFICAR SALDO DO MEMBRO -->
+    <div class="secao-container">
+        <div class="secao-titulo">⚙️ 4. MODIFICAR SALDO DO MEMBRO</div>
+        <div class="grid-inputs">
+            <input type="text" id="adm-user-id" placeholder="Digite o ID do Usuário">
+            <input type="number" id="adm-user-qtd" placeholder="Qtd Moedas">
+        </div>
+        <button class="btn-blue" style="width: 100%; background-color: #7c2d12;" onclick="admModificarSaldo()">Salvar Moedas do Cliente</button>
+    </div>
+
+    <!-- SEÇÃO 5: LISTA COMPLETA DE MEMBROS -->
+    <div class="secao-container">
+        <div class="secao-titulo">👥 5. LISTA COMPLETA DE MEMBROS REGISTRADOS</div>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID Membro</th>
+                        <th>Saldo Atual</th>
+                        <th>Saque Solicitado</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-membros-adm">
+                    <!-- Gerado via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <hr style="border: 0; border-top: 1px dashed var(--border-color); margin: 40px 0;">
+
+    <!-- VISÃO DO CLIENTE / MEMBRO -->
+    <h2 style="margin-bottom: 20px; text-align: center; color: var(--text-muted);">Previsões Ativas (Visão do Membro)</h2>
+    <div id="lista-enquetes-cliente">
+        <!-- Cards das enquetes ativos aparecem aqui -->
     </div>
 
     <script>
-        let modoAuth = "LOGIN";
-        let usuarioLogado = null;
-        let pacotePendente = null;
-        let loopGlobalCronometros = null;
-
-        let bancoEnquetes = JSON.parse(localStorage.getItem('voxpopuli_banco_enquetes')) || [
+        // --- BANCO DE DADOS SIMULADO (LOCALSTORAGE) ---
+        let bancoEnquetes = JSON.parse(localStorage.getItem('vox_enquetes')) || [
             {
                 id: "E-101",
                 pergunta: "Quem é o melhor? Ronaldo ou Kaká?",
-                opt1: "Ronaldo", opt2: "Kaka",
-                tempoRestanteMilis: 5 * 60 * 60 * 1000,
-                statusTempo: "RODANDO",
-                votos: { opt1: 0, opt2: 0 }
+                opt1: "Ronaldo",
+                opt2: "Kaka",
+                votos: { opt1: 0, opt2: 0 },
+                fim: Date.now() + 600000 // 10 minutos padrão de teste inicial
             }
         ];
 
-        let selecoesLocaisClientes = {};
+        let listaMembros = JSON.parse(localStorage.getItem('vox_membros')) || [
+            { id: "M-771", saldo: 150.00, saqueSolicitado: 0.00 },
+            { id: "M-902", saldo: 45.50, saqueSolicitado: 0.00 }
+        ];
 
-        function salvarEnquetesNoStorage() {
-            localStorage.setItem('voxpopuli_banco_enquetes', JSON.stringify(bancoEnquetes));
+        let meuSaldo = parseFloat(localStorage.getItem('vox_meu_saldo')) || 100.00;
+        let opcaoSelecionadaLocal = {}; 
+
+        function salvarDados() {
+            localStorage.setItem('vox_enquetes', JSON.stringify(bancoEnquetes));
+            localStorage.setItem('vox_membros', JSON.stringify(listaMembros));
+            localStorage.setItem('vox_meu_saldo', meuSaldo.toString());
         }
 
-        function obterBancoUsuarios() {
-            try {
-                let dados = localStorage.getItem('voxpopuli_usuarios');
-                let usuarios = dados ? JSON.parse(dados) : {};
-                
-                if (!usuarios || Object.keys(usuarios).length === 0) {
-                    usuarios = {
-                        "teste@membro.com": {
-                            nome: "Membro de Teste",
-                            whatsapp: "(22) 99999-9999",
-                            cpf: "111.111.111-11",
-                            chavePix: "teste@membro.com",
-                            senha: "123456",
-                            saldo: 50.00,
-                            pendente: 0,
-                            saquePendente: 0,
-                            codigo: "M-7777",
-                            historicoVotos: []
-                        }
-                    };
-                    localStorage.setItem('voxpopuli_usuarios', JSON.stringify(usuarios));
-                }
-                return usuarios;
-            } catch (e) { return {}; }
-        }
+        // --- FUNÇÕES DA SEÇÃO 2 & 3 (GERENCIAMENTO DE ENQUETES) ---
+        function admInjetarEnquete() {
+            const pergunta = document.getElementById('adm-pergunta').value;
+            const opt1 = document.getElementById('adm-opt1').value;
+            const opt2 = document.getElementById('adm-opt2').value;
+            const minutos = parseInt(document.getElementById('adm-tempo').value);
 
-        function alternarModoAuth() {
-            const camposCadastro = document.querySelectorAll('.campo-cadastro');
-            const titulo = document.getElementById('auth-titulo');
-            const btnPrincipal = document.getElementById('btn-auth-principal');
-            const alternarTexto = document.getElementById('btn-alternar-auth');
-
-            if (modoAuth === "LOGIN") {
-                modoAuth = "CADASTRO";
-                titulo.innerText = "Crie sua Conta Gratuitamente";
-                btnPrincipal.innerText = "Finalizar Cadastro";
-                camposCadastro.forEach(el => el.style.display = 'block');
-                alternarTexto.innerHTML = 'Já tem uma conta? <span onclick="alternarModoAuth()">Faça Login</span>';
-            } else {
-                modoAuth = "LOGIN";
-                titulo.innerText = "Acesse sua Conta";
-                btnPrincipal.innerText = "Entrar na Conta";
-                camposCadastro.forEach(el => el.style.display = 'none');
-                alternarTexto.innerHTML = 'Não tem conta? <span onclick="advanced_login()">Cadastre-se aqui</span>';
-            }
-        }
-
-        function executarAutenticacao() {
-            const emailInput = document.getElementById('auth-email').value.trim();
-            const senhaInput = document.getElementById('auth-senha').value.trim();
-
-            if(!emailInput || !senhaInput) { alert("Preencha o e-mail e a senha!"); return; }
-
-            if(emailInput === "@admhelth" && senhaInput === "2481") {
-                usuarioLogado = { login: "@admhelth", email: "@admhelth", role: "ADM", codigo: "MASTER-ADM", nome: "Administrador" };
-                logarSucesso();
-                return;
-            }
-
-            let bancoUsuarios = obterBancoUsuarios();
-
-            if(modoAuth === "CADASTRO") {
-                const nomeInput = document.getElementById('auth-nome').value.trim();
-                const whatsappInput = document.getElementById('auth-whatsapp').value.trim();
-                const cpfInput = document.getElementById('auth-cpf').value.trim();
-                const chavePixInput = document.getElementById('auth-chavepix').value.trim();
-
-                if(!nomeInput || !whatsappInput || !cpfInput || !chavePixInput) {
-                    alert("Por favor, preencha todos os campos do cadastro!");
-                    return;
-                }
-
-                if(bancoUsuarios[emailInput]) { alert("Este e-mail já está cadastrado!"); return; }
-                const codigoGerado = `M-${Math.floor(1000 + Math.random() * 9000)}`;
-                
-                bancoUsuarios[emailInput] = { 
-                    nome: nomeInput, whatsapp: whatsappInput, cpf: cpfInput, chavePix: chavePixInput,
-                    senha: senhaInput, saldo: 0, pendente: 0, saquePendente: 0, codigo: codigoGerado,
-                    historicoVotos: []
-                };
-                
-                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-                alert(`Cadastro concluído!\nSeu ID para login: ${codigoGerado}`);
-                alternarModoAuth();
-            } else {
-                if (!bancoUsuarios[emailInput]) {
-                    alert("E-mail não encontrado!");
-                    return;
-                }
-
-                if (bancoUsuarios[emailInput].senha !== senhaInput) {
-                    alert("Senha incorreta!");
-                    return;
-                }
-
-                usuarioLogado = { 
-                    login: emailInput, email: emailInput, role: "USER", 
-                    nome: bancoUsuarios[emailInput].nome || "Membro", codigo: bancoUsuarios[emailInput].codigo || "M-Def"
-                };
-                logarSucesso();
-            }
-        }
-
-        function logarSucesso() {
-            document.getElementById('view-auth').style.display = 'none';
-            document.getElementById('app-conteudo').style.display = 'flex';
-            
-            const isAdm = usuarioLogado.role === "ADM";
-            document.getElementById('painel-adm').style.display = isAdm ? 'block' : 'none';
-            document.getElementById('financeiro-membro-box').style.display = isAdm ? 'none' : 'block';
-            
-            if(isAdm) { admAtualizarTabelaMembros(); admAtualizarTabelaEnquetes(); }
-            
-            const badgeCod = document.getElementById('badge-codigo-membro');
-            if(!isAdm) {
-                badgeCod.innerText = `ID: ${usuarioLogado.codigo}`;
-                badgeCod.style.display = 'block';
-                atualizarValoresSaqueInterface();
-            } else {
-                badgeCod.style.display = 'none';
-            }
-
-            selecoesLocaisClientes = {};
-            navegarPara('view-enquetes');
-            renderizarListaEnquetesCliente();
-            inicializarLoopCronometros();
-        }
-
-        function atualizarValoresSaqueInterface() {
-            let bancoUsuarios = obterBancoUsuarios();
-            const dadosUser = bancoUsuarios[usuarioLogado.login];
-            if(dadosUser) {
-                const saldoBruto = dadosUser.saldo || 0;
-                const taxa = saldoBruto * 0.03;
-                const liquido = Math.max(0, saldoBruto - taxa);
-
-                document.getElementById('badge-pendente').style.display = (dadosUser.pendente > 0) ? 'inline-block' : 'none';
-                document.getElementById('badge-saque-pendente').style.display = (dadosUser.saquePendente > 0) ? 'inline-block' : 'none';
-                
-                document.getElementById('saque-txt-bruto').innerText = saldoBruto.toFixed(2);
-                document.getElementById('saque-txt-taxa').innerText = taxa.toFixed(2);
-                document.getElementById('saque-txt-liquido').innerText = liquido.toFixed(2);
-            }
-        }
-
-        function fazerLogout() {
-            clearInterval(loopGlobalCronometros);
-            usuarioLogado = null;
-            document.getElementById('app-conteudo').style.display = 'none';
-            document.getElementById('view-auth').style.display = 'flex';
-        }
-
-        function navegarPara(idSecao) {
-            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-            const destino = document.getElementById(idSecao);
-            if(destino) destino.classList.add('active');
-            
-            let bancoUsuarios = obterBancoUsuarios();
-            let saldoUser = 0;
-            if(usuarioLogado && usuarioLogado.role !== "ADM" && bancoUsuarios[usuarioLogado.login]) {
-                saldoUser = bancoUsuarios[usuarioLogado.login].saldo || 0;
-                atualizarValoresSaqueInterface();
-            }
-            document.getElementById('saldo-atual').innerText = Number(saldoUser).toFixed(2);
-        }
-
-        function inicializarLoopCronometros() {
-            clearInterval(loopGlobalCronometros);
-            let ultimoTimestamp = Date.now();
-
-            loopGlobalCronometros = setInterval(() => {
-                const agora = Date.now();
-                const decorrido = agora - ultimoTimestamp;
-                ultimoTimestamp = agora;
-
-                let houveAlteracao = false;
-
-                bancoEnquetes.forEach(enq => {
-                    if (enq.statusTempo === "RODANDO") {
-                        enq.tempoRestanteMilis -= decorrido;
-                        houveAlteracao = true;
-                        if (enq.tempoRestanteMilis <= 0) {
-                            enq.tempoRestanteMilis = 0;
-                            enq.statusTempo = "ENCERRADO";
-                        }
-                    }
-                });
-
-                if (houveAlteracao) {
-                    salvarEnquetesNoStorage();
-                }
-
-                bancoEnquetes.forEach(enq => {
-                    const elemRelogio = document.getElementById(`clock-${enq.id}`);
-                    const elemBoxRelogio = document.getElementById(`timerbox-${enq.id}`);
-                    const elemStatusTxt = document.getElementById(`statustxt-${enq.id}`);
-                    
-                    if (elemRelogio) {
-                        elemRelogio.innerText = formatarMilisParaRelogio(enq.tempoRestanteMilis);
-                        
-                        if (enq.tempoRestanteMilis <= 0 || enq.statusTempo === "ENCERRADO") {
-                            if(elemBoxRelogio) elemBoxRelogio.className = "poll-side-timer ended-timer";
-                            if(elemStatusTxt) elemStatusTxt.innerText = "⏱️ Tempo Esgotado";
-                        } else if (enq.statusTempo === "PAUSADO") {
-                            if(elemBoxRelogio) elemBoxRelogio.className = "poll-side-timer paused-timer";
-                            if(elemStatusTxt) elemStatusTxt.innerText = "⏱️ PAUSADA";
-                        } else {
-                            if(elemBoxRelogio) elemBoxRelogio.className = "poll-side-timer active-timer";
-                            if(elemStatusTxt) elemStatusTxt.innerText = "⏱️ ATIVA";
-                        }
-                    }
-                });
-
-            }, 1000);
-        }
-
-        function formatarMilisParaRelogio(totalMilis) {
-            if (totalMilis <= 0) return "00:00:00";
-            const horas = Math.floor(totalMilis / (1000 * 60 * 60));
-            const minutos = Math.floor((totalMilis % (1000 * 60 * 60)) / (1000 * 60));
-            const segundos = Math.floor((totalMilis % (1000 * 60)) / 1000);
-            return `${horas < 10 ? "0"+horas : horas}:${minutos < 10 ? "0"+minutos : minutos}:${segundos < 10 ? "0"+segundos : segundos}`;
-        }
-
-        function admCriarNovaEnquete() {
-            const pergunta = document.getElementById('adm-poll-pergunta').value.trim();
-            const o1 = document.getElementById('adm-poll-opt1').value.trim();
-            const o2 = document.getElementById('adm-poll-opt2').value.trim();
-            const minutos = parseInt(document.getElementById('adm-poll-tempo').value.trim());
-
-            /* CORREÇÃO AQUI: Mudado de 'minutes' para 'minutos' para evitar quebra de script */
-            if(!pergunta || !o1 || !o2 || isNaN(minutos) || minutos <= 0) {
-                alert("Preencha todos os dados da enquete!");
+            if(!pergunta || !opt1 || !opt2 || !minutos) {
+                alert("Preencha todos os campos para injetar a enquete!");
                 return;
             }
 
             const novaEnquete = {
-                id: `E-${Math.floor(1000 + Math.random() * 9000)}`,
+                id: "E-" + Math.floor(100 + Math.random() * 900),
                 pergunta: pergunta,
-                opt1: o1,
-                opt2: o2,
-                tempoRestanteMilis: minutos * 60 * 1000,
-                statusTempo: "RODANDO",
-                votos: { opt1: 0, opt2: 0 }
+                opt1: opt1,
+                opt2: opt2,
+                votos: { opt1: 0, opt2: 0 },
+                fim: Date.now() + (minutos * 60 * 1000)
             };
 
             bancoEnquetes.push(novaEnquete);
-            salvarEnquetesNoStorage();
+            salvarDados();
+            
+            // Limpa os inputs
+            document.getElementById('adm-pergunta').value = '';
+            document.getElementById('adm-opt1').value = '';
+            document.getElementById('adm-opt2').value = '';
+            document.getElementById('adm-tempo').value = '';
 
-            document.getElementById('adm-poll-pergunta').value = "";
-            document.getElementById('adm-poll-opt1').value = "";
-            document.getElementById('adm-poll-opt2').value = "";
-            document.getElementById('adm-poll-tempo').value = "";
+            atualizarTelas();
+        }
 
-            alert("Nova enquete injetada com sucesso!");
-            admAtualizarTabelaEnquetes();
+        function admExcluirEnquete(idEnquete) {
+            if (confirm("Tem certeza que deseja excluir esta enquete permanentemente da plataforma?")) {
+                bancoEnquetes = bancoEnquetes.filter(enq => enq.id !== idEnquete);
+                salvarDados();
+                atualizarTelas();
+            }
+        }
+
+        // --- FUNÇÕES DA SEÇÃO 4 & 5 (GERENCIAMENTO DE MEMBROS) ---
+        function admModificarSaldo() {
+            const id = document.getElementById('adm-user-id').value;
+            const qtd = parseFloat(document.getElementById('adm-user-qtd').value);
+
+            if(!id || isNaN(qtd)) {
+                alert("Insira um ID válido e a quantidade de moedas.");
+                return;
+            }
+
+            let membro = listaMembros.find(m => m.id === id);
+            if(membro) {
+                membro.saldo = qtd;
+            } else {
+                listaMembros.push({ id: id, saldo: qtd, saqueSolicitado: 0.00 });
+            }
+
+            salvarDados();
+            document.getElementById('adm-user-id').value = '';
+            document.getElementById('adm-user-qtd').value = '';
+            atualizarTelas();
+        }
+
+        function admExcluirMembro(idMembro) {
+            if (confirm("Deseja mesmo remover/banir este membro do sistema?")) {
+                listaMembros = listaMembros.filter(m => m.id !== idMembro);
+                salvarDados();
+                atualizarTelas();
+            }
+        }
+
+        // --- FUNÇÕES DA INTERFACE DO CLIENTE (VOTAÇÃO E CÁLCULO) ---
+        function selecionarOpcao(idEnquete, opcao) {
+            opcaoSelecionadaLocal[idEnquete] = opcao;
             renderizarListaEnquetesCliente();
+        }
+
+        function clienteConfirmarVoto(idEnquete) {
+            const escolha = opcaoSelecionadaLocal[idEnquete];
+            const inputQtd = document.getElementById(`qtd-voto-${idEnquete}`);
+            const qtdMoedas = parseFloat(inputQtd.value);
+
+            if (!escolha) {
+                alert("Selecione uma das opções antes de confirmar!");
+                return;
+            }
+            if (isNaN(qtdMoedas) || qtdMoedas <= 0) {
+                alert("Digite uma quantidade válida de moedas para votar.");
+                return;
+            }
+            if (qtdMoedas > meuSaldo) {
+                alert("Saldo insuficiente para processar este palpite!");
+                return;
+            }
+
+            const enq = bancoEnquetes.find(e => e.id === idEnquete);
+            if (Date.now() > enq.fim) {
+                alert("O tempo para esta previsão já se esgotou!");
+                return;
+            }
+
+            // Deduz o saldo e injeta o voto no somatório global
+            meuSaldo -= qtdMoedas;
+            enq.votos[escolha] += qtdMoedas;
+
+            salvarDados();
+            atualizarTelas();
+            alert("Palpite computado com sucesso!");
+        }
+
+        // --- SISTEMA DE RENDERIZAÇÃO E ATUALIZAÇÃO SÍNCRONA ---
+        function renderizarTabelaEnquetesADM() {
+            const tbody = document.getElementById('tabela-enquetes-adm');
+            tbody.innerHTML = '';
+
+            bancoEnquetes.forEach(enq => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:bold;">${enq.id}</td>
+                    <td>${enq.pergunta}</td>
+                    <td id="adm-timer-${enq.id}">Calculando...</td>
+                    <td>O1: ${enq.votos.opt1} | O2: ${enq.votos.opt2}</td>
+                    <td>
+                        <button class="btn-red" onclick="admExcluirEnquete('${enq.id}')" style="padding: 4px 8px; font-size:12px;">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderizarTabelaMembrosADM() {
+            const tbody = document.getElementById('tabela-membros-adm');
+            tbody.innerHTML = '';
+
+            listaMembros.forEach(m => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${m.id}</td>
+                    <td style="color:var(--accent-green); font-weight:bold;">R$ ${m.saldo.toFixed(2)}</td>
+                    <td style="color:var(--text-muted);">R$ ${m.saqueSolicitado.toFixed(2)}</td>
+                    <td>
+                        <button class="btn-blue" onclick="document.getElementById('adm-user-id').value='${m.id}'; document.getElementById('adm-user-qtd').focus();" style="padding: 4px 8px; font-size:12px;">Mudar Saldo</button>
+                        <button class="btn-red" onclick="admExcluirMembro('${m.id}')" style="padding: 4px 8px; font-size:12px; margin-left:5px;">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         function renderizarListaEnquetesCliente() {
             const container = document.getElementById('lista-enquetes-cliente');
-            container.innerHTML = "";
+            container.innerHTML = '';
 
-            if(bancoEnquetes.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:20px;">Nenhuma previsão ativa encontrada no momento.</div>`;
+            if (bancoEnquetes.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:var(--text-muted);">Nenhuma previsão ativa no momento.</p>`;
                 return;
             }
 
             bancoEnquetes.forEach(enq => {
+                // Cálculo automático e em tempo real de qual resposta está liderando por soma global
                 let txtTendencia = "Aguardando palpites...";
                 let corTendencia = "var(--text-muted)";
+
                 if (enq.votos.opt1 > enq.votos.opt2) {
-                    txtTendencia = `📈 Liderando: ${enq.opt1}`; corTendencia = "var(--accent-green)";
+                    txtTendencia = `📈 Liderando: ${enq.opt1}`;
+                    corTendencia = "var(--accent-green)";
                 } else if (enq.votos.opt2 > enq.votos.opt1) {
-                    txtTendencia = `📈 Liderando: ${enq.opt2}`; corTendencia = "var(--accent-green)";
+                    txtTendencia = `📈 Liderando: ${enq.opt2}`;
+                    corTendencia = "var(--accent-green)";
                 } else if (enq.votos.opt1 > 0 && enq.votos.opt1 === enq.votos.opt2) {
-                    txtTendencia = "Empate Técnico no Momento!"; corTendencia = "#f59e0b";
+                    txtTendencia = "Empate Técnico no Momento!";
+                    corTendencia = "#f59e0b"; // Amarelo
                 }
 
-                const selecao = selecoesLocaisClientes[enq.id];
-                const v1Txt = selecao === 'opt1' ? '70%' : (selecao === 'opt2' ? '30%' : '--');
-                const v2Txt = selecao === 'opt2' ? '70%' : (selecao === 'opt1' ? '30%' : '--');
-
-                let classeTimer = "poll-side-timer active-timer";
-                let textoStatus = "⏱️ ATIVA";
-                if(enq.statusTempo === "PAUSADO") {
-                    classeTimer = "poll-side-timer paused-timer";
-                    textoStatus = "⏱️ PAUSADA";
-                } else if(enq.tempoRestanteMilis <= 0) {
-                    classeTimer = "poll-side-timer ended-timer";
-                    textoStatus = "⏱️ Tempo Esgotado";
-                }
+                const escolhaAtual = opcaoSelecionadaLocal[enq.id];
 
                 const card = document.createElement('div');
-                card.className = "poll-card";
+                card.className = 'card-previsao';
                 card.innerHTML = `
-                    <div class="poll-layout-wrapper">
-                        <div class="poll-main-content">
-                            <div class="status-andamento-box">
-                                <div class="status-andamento-titulo">🔥 Enquete em Andamento</div>
-                                <div class="status-andamento-lider" style="color: ${corTendencia}">${txtTendencia}</div>
-                            </div>
+                    <div class="status-header">
+                        <span class="status-tag" style="color:#ef4444;">🔥 Enquete em Andamento</span>
+                        <div class="tendencia-txt" style="color: ${corTendencia}; font-weight: bold;">${txtTendencia}</div>
+                    </div>
 
-                            <div style="margin-bottom:16px; font-weight:600; text-align:center; font-size:16px;">${enq.pergunta}</div>
+                    <div class="pergunta-txt">${enq.pergunta}</div>
 
-                            <div class="options-group">
-                                <label class="option-label ${selecao === 'opt1' ? 'selected' : ''}" onclick="clienteSelecionarOpcaoLocal('${enq.id}', 'opt1')">
-                                    <span>${enq.opt1}</span> <span style="font-weight:700; color:var(--accent-blue)">${v1Txt}</span>
-                                </label>
-                                <label class="option-label ${selecao === 'opt2' ? 'selected' : ''}" onclick="clienteSelecionarOpcaoLocal('${enq.id}', 'opt2')">
-                                    <span>${enq.opt2}</span> <span style="font-weight:700; color:var(--accent-blue)">${v2Txt}</span>
-                                </label>
-                            </div>
+                    <div class="opcao-row ${escolhaAtual === 'opt1' ? 'selecionada' : ''}" onclick="selecionarOpcao('${enq.id}', 'opt1')">
+                        <span>${enq.opt1}</span>
+                        <span style="color:var(--text-muted); font-size:12px;">🪙 ${enq.votos.opt1}</span>
+                    </div>
 
-                            <div class="form-group" style="margin-bottom:14px;">
-                                <label style="font-size:12px; font-weight:600;">Quantas moedas deseja votar?</label>
-                                <input type="number" id="inputmoedas-${enq.id}" class="form-control" value="1" min="1" style="padding:10px; font-size:14px;">
-                            </div>
+                    <div class="opcao-row ${escolhaAtual === 'opt2' ? 'selecionada' : ''}" onclick="selecionarOpcao('${enq.id}', 'opt2')">
+                        <span>${enq.opt2}</span>
+                        <span style="color:var(--text-muted); font-size:12px;">🪙 ${enq.votos.opt2}</span>
+                    </div>
 
-                            <button class="btn-action" id="btnvotar-${enq.id}" onclick="clienteConfirmarVoto('${enq.id}')">
-                                Confirmar Palpites
-                            </button>
-                        </div>
+                    <div style="margin-top:15px;">
+                        <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px;">Quantas moedas deseja votar?</label>
+                        <input type="number" id="qtd-voto-${enq.id}" value="1" min="1" style="margin-bottom:10px;">
+                        <button class="btn-blue" style="width:100%; padding:12px;" onclick="clienteConfirmarVoto('${enq.id}')">Confirmar Palpites</button>
+                    </div>
 
-                        <div id="timerbox-${enq.id}" class="${classeTimer}">
-                            <div class="side-timer-title" id="statustxt-${enq.id}">${textoStatus}</div>
-                            <div class="side-timer-clock" id="clock-${enq.id}">${formatarMilisParaRelogio(enq.tempoRestanteMilis)}</div>
-                        </div>
+                    <div class="timer-box">
+                        <div class="timer-title" id="timer-title-${enq.id}">⏱️ Tempo Restante</div>
+                        <div class="timer-clock" id="cliente-clock-${enq.id}">00:00:00</div>
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        function clienteSelecionarOpcaoLocal(enqueteId, opcao) {
-            selecoesLocaisClientes[enqueteId] = opcao;
+        function atualizarTelas() {
+            document.getElementById('saldo-topo').innerText = `🪙 ${meuSaldo.toFixed(2)} Moedas`;
+            renderizarTabelaEnquetesADM();
+            renderizarTabelaMembrosADM();
             renderizarListaEnquetesCliente();
         }
 
-        function clienteConfirmarVoto(enqueteId) {
-            const enq = bancoEnquetes.find(e => e.id === enqueteId);
-            const escolha = selecoesLocaisClientes[enqueteId];
-            if(!escolha) { alert("Escolha uma opção antes de confirmar!"); return; }
-
-            const inputMoedas = document.getElementById(`inputmoedas-${enqueteId}`);
-            const qtdMoedas = parseFloat(inputMoedas.value);
-
-            if(isNaN(qtdMoedas) || qtdMoedas < 1) { alert("Insira uma quantidade válida!"); return; }
-
-            let bancoUsuarios = obterBancoUsuarios();
-            let dadosUser = bancoUsuarios[usuarioLogado.login];
-
-            if(!dadosUser || dadosUser.saldo < qtdMoedas) {
-                alert("Moedas insuficientes!"); return;
-            }
-
-            enq.votos[escolha] += qtdMoedas;
-            dadosUser.saldo -= qtdMoedas;
-
-            if(!dadosUser.historicoVotos) dadosUser.historicoVotos = [];
-            dadosUser.historicoVotos.push({
-                enqueteId: enqueteId,
-                opcaoEscolhida: escolha,
-                moedasApostadas: qtdMoedas
-            });
-
-            bancoUsuarios[usuarioLogado.login] = dadosUser;
-            localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-            salvarEnquetesNoStorage();
-
-            document.getElementById('saldo-atual').innerText = Number(dadosUser.saldo).toFixed(2);
-            alert("Seu palpite foi computado com sucesso!");
-            renderizarListaEnquetesCliente();
-        }
-
-        function admAtualizarTabelaEnquetes() {
-            const corpo = document.getElementById('adm-tabela-enquetes-corpo');
-            if(!corpo) return;
-            corpo.innerHTML = "";
-
+        // --- RELÓGIO REGRESSIVO UNIFICADO ---
+        setInterval(() => {
             bancoEnquetes.forEach(enq => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><b>${enq.id}</b></td>
-                    <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;">${enq.pergunta}</td>
-                    <td><span style="font-family:monospace;">${formatarMilisParaRelogio(enq.tempoRestanteMilis)}</span></td>
-                    <td><b style="color:${enq.statusTempo === 'RODANDO' ? 'var(--accent-green)' : '#f59e0b'}">${enq.statusTempo}</b></td>
-                    <td>O1: ${enq.votos.opt1} | O2: ${enq.votos.opt2}</td>
-                    <td>
-                        <button class="btn-table-action" style="background:#f59e0b;" onclick="admControleTempoEnquete('${enq.id}', 'ALTERNAR')">▶️/⏸️</button>
-                        <button class="btn-table-action" style="background:var(--accent-blue);" onclick="admAjustarMinutosEspecifico('${enq.id}')">+Minutos</button>
-                        <button class="btn-table-action" style="background:var(--accent-red);" onclick="admControleTempoEnquete('${enq.id}', 'ZERAR')">🚨 Zerar</button>
-                        <button class="btn-table-action" style="background:#10b981;" onclick="admFinalizarComGanhador('${enq.id}', 'opt1')">Venceu ${enq.opt1}</button>
-                        <button class="btn-table-action" style="background:#10b981;" onclick="admFinalizarComGanhador('${enq.id}', 'opt2')">Venceu ${enq.opt2}</button>
-                    </td>
-                `;
-                corpo.appendChild(tr);
-            });
-        }
+                const agora = Date.now();
+                const diff = enq.fim - agora;
 
-        function admControleTempoEnquete(id, acao) {
-            const enq = bancoEnquetes.find(e => e.id === id);
-            if(!enq) return;
-
-            if(acao === 'ALTERNAR') {
-                enq.statusTempo = enq.statusTempo === "RODANDO" ? "PAUSADO" : "RODANDO";
-            } else if(acao === 'ZERAR') {
-                enq.tempoRestanteMilis = 0;
-                enq.statusTempo = "ENCERRADO";
-            }
-            salvarEnquetesNoStorage();
-            admAtualizarTabelaEnquetes();
-            renderizarListaEnquetesCliente();
-        }
-
-        function admAjustarMinutosEspecifico(id) {
-            const enq = bancoEnquetes.find(e => e.id === id);
-            if(!enq) return;
-            const min = prompt("Adicionar quantos minutos de duração?", "30");
-            const minutosInt = parseInt(min);
-            if(isNaN(minutosInt) || minutosInt <= 0) return;
-
-            enq.tempoRestanteMilis += minutosInt * 60 * 1000;
-            if(enq.statusTempo === "ENCERRADO") enq.statusTempo = "RODANDO";
-            salvarEnquetesNoStorage();
-            admAtualizarTabelaEnquetes();
-            renderizarListaEnquetesCliente();
-        }
-
-        function admFinalizarComGanhador(enqueteId, opcaoVencedora) {
-            const enq = bancoEnquetes.find(e => e.id === enqueteId);
-            if(!enq) return;
-
-            const nomeVencedor = opcaoVencedora === 'opt1' ? enq.opt1 : enq.opt2;
-            if(!confirm(`Confirma encerrar definindo "${nomeVencedor}" como vencedor?`)) return;
-
-            let bancoUsuarios = obterBancoUsuarios();
-
-            Object.keys(bancoUsuarios).forEach(email => {
-                let u = bancoUsuarios[email];
-                if(u.historicoVotos && u.historicoVotos.length > 0) {
-                    u.historicoVotos = u.historicoVotos.filter(voto => {
-                        if(voto.enqueteId === enqueteId) {
-                            if(voto.opcaoEscolhida === opcaoVencedora) {
-                                u.saldo = (u.saldo || 0) + (voto.moedasApostadas * 1.40);
-                            } else {
-                                u.saldo = (u.saldo || 0) + (voto.moedasApostadas * 0.60);
-                            }
-                            return false;
-                        }
-                        return true;
-                    });
+                let textoTimer = "00:00:00";
+                if (diff > 0) {
+                    const hrs = String(Math.floor(diff / 3600000)).padStart(2, '0');
+                    const mins = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+                    const segs = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+                    textoTimer = `${hrs}:${mins}:${segs}`;
+                } else {
+                    // Trata visualmente o esgotamento no cliente se houver o elemento na tela
+                    const tituloTimer = document.getElementById(`timer-title-${enq.id}`);
+                    if (tituloTimer) tituloTimer.innerText = "🚨 TEMPO ESGOTADO";
                 }
+
+                // Atualiza na tabela administrativa
+                const admClock = document.getElementById(`adm-timer-${enq.id}`);
+                if (admClock) admClock.innerText = textoTimer;
+
+                // Atualiza no painel do cliente
+                const clienteClock = document.getElementById(`cliente-clock-${enq.id}`);
+                if (clienteClock) clienteClock.innerText = textoTimer;
             });
+        }, 1000);
 
-            localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-            bancoEnquetes = bancoEnquetes.filter(e => e.id !== enqueteId);
-            salvarEnquetesNoStorage();
-
-            alert("Saldos liquidados com sucesso!");
-            admAtualizarTabelaEnquetes();
-            admAtualizarTabelaMembros();
-            renderizarListaEnquetesCliente();
-        }
-
-        function admAtualizarTabelaMembros() {
-            const corpo = document.getElementById('adm-tabela-membros-corpo');
-            if(!corpo) return; corpo.innerHTML = "";
-            let bancoUsuarios = obterBancoUsuarios();
-            Object.keys(bancoUsuarios).forEach(email => {
-                const u = bancoUsuarios[email];
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><b>${u.codigo || '-'}</b></td>
-                    <td>${u.nome || '-'}</td>
-                    <td>${email}</td>
-                    <td>${u.whatsapp || '-'}</td>
-                    <td>${u.cpf || '-'}</td>
-                    <td>🪙 <b>${Number(u.saldo || 0).toFixed(2)}</b></td>
-                    <td style="color:${u.pendente > 0 ? '#f59e0b':'#9ca3af'}">R$ ${Number(u.pendente || 0).toFixed(2)}</td>
-                    <td style="color:${u.saquePendente > 0 ? '#3b82f6':'#9ca3af'}">R$ ${Number(u.saquePendente || 0).toFixed(2)}</td>
-                    <td><button class="btn-table-action" onclick="admCarregarMembroParaCorrecao('${u.codigo}')">Mudar Saldo</button></td>
-                `;
-                corpo.appendChild(tr);
-            });
-        }
-
-        function admCarregarMembroParaCorrecao(codigoMembro) {
-            document.getElementById('adm-membro-codigo').value = codigoMembro;
-            let bancoUsuarios = obterBancoUsuarios();
-            const email = Object.keys(bancoUsuarios).find(k => bancoUsuarios[k].codigo === codigoMembro);
-            if(email) {
-                document.getElementById('adm-membro-novo-saldo').value = bancoUsuarios[email].saldo || 0;
-                document.getElementById('modulo-correcao-membro').scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-
-        function admAjustarMembroManual() {
-            const cod = document.getElementById('adm-membro-codigo').value.trim();
-            const novoSaldo = parseFloat(document.getElementById('adm-membro-novo-saldo').value);
-            
-            if(!cod || isNaN(novoSaldo)) {
-                alert("Por favor, preencha o código do membro e o novo saldo!");
-                return;
-            }
-            
-            let bancoUsuarios = obterBancoUsuarios();
-            const email = Object.keys(bancoUsuarios).find(k => bancoUsuarios[k].codigo === cod);
-            
-            if(email) {
-                bancoUsuarios[email].saldo = novoSaldo;
-                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-                admAtualizarTabelaMembros();
-                alert(`Saldo do membro ${cod} alterado com sucesso para ${novoSaldo}!`);
-            } else {
-                alert(`Membro com o código "${cod}" não foi encontrado no sistema.`);
-            }
-        }
-
-        function admProcessarToken() {
-            const token = document.getElementById('adm-token-input').value.trim();
-            if(!token) { alert("Digite ou cole o ID do membro!"); return; }
-            
-            let bancoUsuarios = obterBancoUsuarios();
-            const email = Object.keys(bancoUsuarios).find(k => bancoUsuarios[k].codigo === token);
-            
-            if(email) {
-                const p = bancoUsuarios[email].pendente;
-                if(p <= 0) { alert("Este membro não possui compras pendentes de aprovação!"); return; }
-                
-                bancoUsuarios[email].saldo = (bancoUsuarios[email].saldo || 0) + p;
-                bancoUsuarios[email].pendente = 0;
-                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-                document.getElementById('adm-token-input').value = "";
-                admAtualizarTabelaMembros();
-                alert(`Sucesso! Foram liberadas ${p} moedas para o membro.`);
-            } else {
-                alert("Nenhum usuário encontrado com esse ID/Token!");
-            }
-        }
-
-        function gerarCheckoutLoja() {
-            const valorDigitado = parseFloat(document.getElementById('store-input-reais').value);
-            if(isNaN(valorDigitado) || valorDigitado < 9) { alert("Mínimo R$ 9,00!"); return; }
-            pacotePendente = { qtd: valorDigitado, total: valorDigitado };
-            document.getElementById('modal-info-qtd').innerText = `${valorDigitado.toFixed(2)} Moedas`;
-            document.getElementById('modal-info-preco').innerText = `R$ ${valorDigitado.toFixed(2).replace('.',',')}`;
-            document.getElementById('modal-pix').style.display = 'flex';
-        }
-
-        function fecharModalPix() { document.getElementById('modal-pix').style.display = 'none'; }
-
-        function solicitarLiberacaoPix() {
-            if(!pacotePendente) return;
-            let bancoUsuarios = obterBancoUsuarios();
-            
-            if(bancoUsuarios[usuarioLogado.login]) { 
-                bancoUsuarios[usuarioLogado.login].pendente = pacotePendente.total; 
-                localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios)); 
-            }
-            
-            const msg = `Olá, acabei de fazer um Pix de R$ ${pacotePendente.total.toFixed(2)}. Libera meus créditos? Meu ID: ${usuarioLogado.codigo}`;
-            fecharModalPix();
-            window.open(`https://api.whatsapp.com/send?phone=5522997184205&text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
-        function solicitarSaqueMembro() {
-            let bancoUsuarios = obterBancoUsuarios();
-            const d = bancoUsuarios[usuarioLogado.login];
-            if(!d || d.saldo <= 0) return;
-            const valorBruto = d.saldo; const taxa = valorBruto * 0.03; const liquido = valorBruto - taxa;
-            if(!confirm(`Confirma resgate de R$ ${liquido.toFixed(2)} líquido?`)) return;
-            d.saquePendente = liquido; d.saldo = 0;
-            localStorage.setItem('voxpopuli_usuarios', JSON.stringify(bancoUsuarios));
-            atualizarValoresSaqueInterface();
-            document.getElementById('saldo-atual').innerText = "0.00";
-            const msg = `Resgate Solicitado! ID: ${usuarioLogado.codigo} | Valor Líquido: R$ ${liquido.toFixed(2)}`;
-            window.open(`https://api.whatsapp.com/send?phone=5522997184205&text=${encodeURIComponent(msg)}`, '_blank');
-        }
+        // Inicialização Inicial da Página
+        atualizarTelas();
     </script>
 </body>
 </html>
