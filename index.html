@@ -3,569 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxPopuli - Painel Unificado</title>
+    <title>VoxPopuli - Entrar</title>
     <style>
-        :root {
-            --bg-main: #0b0f19;
-            --bg-card: #111827;
-            --bg-input: #1f2937;
-            --primary-blue: #2563eb;
-            --accent-green: #10b981;
-            --accent-red: #dc2626;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --border-color: #374151;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            padding: 20px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 30px;
-        }
-
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #3b82f6;
-        }
-
-        .logo span {
-            color: var(--accent-green);
-        }
-
-        .user-status {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .moedas-tag {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid var(--accent-green);
-            color: var(--accent-green);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-        }
-
-        .btn-blue {
-            background-color: var(--primary-blue);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .btn-red {
-            background-color: var(--accent-red);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .secao-container {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-
-        .secao-titulo {
-            font-size: 18px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .grid-inputs {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        input, select {
-            background-color: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 10px;
-            border-radius: 6px;
-            width: 100%;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th, td {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        th {
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-
-        .card-previsao {
-            background: linear-gradient(145deg, #1e293b, #111827);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 20px;
-            max-width: 500px;
-            margin: 0 auto 20px auto;
-        }
-
-        .status-header {
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
-        .status-tag {
-            font-size: 12px;
-            text-transform: uppercase;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        .tendencia-txt {
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        .pergunta-txt {
-            font-size: 18px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .opcao-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            padding: 14px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .opcao-row.selecionada {
-            border-color: var(--primary-blue);
-            background: rgba(37, 99, 235, 0.1);
-        }
-
-        .timer-box {
-            border: 1px solid var(--accent-red);
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .timer-title {
-            color: var(--accent-red);
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-
-        .timer-clock {
-            font-size: 24px;
-            font-family: monospace;
-            font-weight: bold;
-        }
+        body { background-color: #0b0f19; color: #f3f4f6; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: #111827; border: 1px solid #374151; padding: 30px; border-radius: 12px; width: 100%; max-width: 350px; text-align: center; }
+        h2 { color: #3b82f6; margin-bottom: 20px; }
+        input { background: #1f2937; border: 1px solid #374151; color: white; padding: 12px; border-radius: 6px; width: 100%; margin-bottom: 15px; box-sizing: border-box; }
+        button { background: #2563eb; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .alternar { margin-top: 15px; font-size: 14px; color: #9ca3af; cursor: pointer; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-
-    <div class="header">
-        <div class="logo">Vox<span>Populi</span> [ADM]</div>
-        <div class="user-status">
-            <div class="moedas-tag" id="saldo-topo">🪙 0.00 Moedas</div>
-            <button class="btn-blue">Comprar Moedas</button>
-            <button class="btn-red" style="background:#374151;">Sair</button>
-        </div>
-    </div>
-
-    <!-- SEÇÃO 2: INJETAR ENQUETE -->
-    <div class="secao-container">
-        <div class="secao-titulo">📝 2. INJETAR NOVA ENQUETE</div>
-        <div class="grid-inputs">
-            <input type="text" id="adm-pergunta" placeholder="Digite a pergunta da enquete...">
-            <input type="text" id="adm-opt1" placeholder="Opção 1">
-            <input type="text" id="adm-opt2" placeholder="Opção 2">
-            <input type="number" id="adm-tempo" placeholder="Tempo de Duração (em minutos). Ex: 60">
-        </div>
-        <button class="btn-blue" style="width: 100%; padding: 12px;" onclick="admInjetarEnquete()">Injetar Enquete na Plataforma</button>
-    </div>
-
-    <!-- SEÇÃO 3: CONTROLE INDIVIDUAL DAS ENQUETES -->
-    <div class="secao-container" style="border-color: var(--accent-red);">
-        <div class="secao-titulo" style="color: #f87171;">🎲 3. CONTROLE INDIVIDUAL DAS ENQUETES INJETADAS</div>
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Pergunta</th>
-                        <th>Tempo Restante</th>
-                        <th>Votos (O1 / O2)</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-enquetes-adm">
-                    <!-- Gerado via JS -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- SEÇÃO 4: MODIFICAR SALDO DO MEMBRO -->
-    <div class="secao-container">
-        <div class="secao-titulo">⚙️ 4. MODIFICAR SALDO DO MEMBRO</div>
-        <div class="grid-inputs">
-            <input type="text" id="adm-user-id" placeholder="Digite o ID do Usuário">
-            <input type="number" id="adm-user-qtd" placeholder="Qtd Moedas">
-        </div>
-        <button class="btn-blue" style="width: 100%; background-color: #7c2d12;" onclick="admModificarSaldo()">Salvar Moedas do Cliente</button>
-    </div>
-
-    <!-- SEÇÃO 5: LISTA COMPLETA DE MEMBROS -->
-    <div class="secao-container">
-        <div class="secao-titulo">👥 5. LISTA COMPLETA DE MEMBROS REGISTRADOS</div>
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID Membro</th>
-                        <th>Saldo Atual</th>
-                        <th>Saque Solicitado</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-membros-adm">
-                    <!-- Gerado via JS -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <hr style="border: 0; border-top: 1px dashed var(--border-color); margin: 40px 0;">
-
-    <!-- VISÃO DO CLIENTE / MEMBRO -->
-    <h2 style="margin-bottom: 20px; text-align: center; color: var(--text-muted);">Previsões Ativas (Visão do Membro)</h2>
-    <div id="lista-enquetes-cliente">
-        <!-- Cards das enquetes ativos aparecem aqui -->
+    <div class="login-card">
+        <h2 id="tela-titulo">VoxPopuli Login</h2>
+        <input type="text" id="user-id" placeholder="Digite seu ID de Usuário">
+        <input type="password" id="user-senha" placeholder="Digite sua Senha">
+        <button onclick="executarAcao()" id="btn-acao">Entrar na Plataforma</button>
+        <div class="alternar" onclick="alternarModo()" id="btn-alternar">Não tem conta? Cadastre-se aqui</div>
     </div>
 
     <script>
-        // --- BANCO DE DADOS SIMULADO (LOCALSTORAGE) ---
-        let bancoEnquetes = JSON.parse(localStorage.getItem('vox_enquetes')) || [
-            {
-                id: "E-101",
-                pergunta: "Quem é o melhor? Ronaldo ou Kaká?",
-                opt1: "Ronaldo",
-                opt2: "Kaka",
-                votos: { opt1: 0, opt2: 0 },
-                fim: Date.now() + 600000 // 10 minutos padrão de teste inicial
-            }
-        ];
+        const SUPABASE_URL = "https://xxxzluqjgqwkpzjjxpbj.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHpsdXFqZ3F3a3B6amp4cGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MTA2NjcsImV4cCI6MjA5ODE4NjY2N30.VzGPY5L8EhKt7-ARJaShpM6mMl8kA2tlRG_S4dtUPzc";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let listaMembros = JSON.parse(localStorage.getItem('vox_membros')) || [
-            { id: "M-771", saldo: 150.00, saqueSolicitado: 0.00 },
-            { id: "M-902", saldo: 45.50, saqueSolicitado: 0.00 }
-        ];
+        let modoLogin = true;
 
-        let meuSaldo = parseFloat(localStorage.getItem('vox_meu_saldo')) || 100.00;
-        let opcaoSelecionadaLocal = {}; 
-
-        function salvarDados() {
-            localStorage.setItem('vox_enquetes', JSON.stringify(bancoEnquetes));
-            localStorage.setItem('vox_membros', JSON.stringify(listaMembros));
-            localStorage.setItem('vox_meu_saldo', meuSaldo.toString());
+        function alternarModo() {
+            modoLogin = !modoLogin;
+            document.getElementById('tela-titulo').innerText = modoLogin ? "VoxPopuli Login" : "Criar Nova Conta";
+            document.getElementById('btn-acao').innerText = modoLogin ? "Entrar na Plataforma" : "Concluir Cadastro";
+            document.getElementById('btn-alternar').innerText = modoLogin ? "Não tem conta? Cadastre-se aqui" : "Já tem conta? Faça Login";
         }
 
-        // --- FUNÇÕES DA SEÇÃO 2 & 3 (GERENCIAMENTO DE ENQUETES) ---
-        function admInjetarEnquete() {
-            const pergunta = document.getElementById('adm-pergunta').value;
-            const opt1 = document.getElementById('adm-opt1').value;
-            const opt2 = document.getElementById('adm-opt2').value;
-            const minutos = parseInt(document.getElementById('adm-tempo').value);
+        async function executarAcao() {
+            const id = document.getElementById('user-id').value.trim();
+            const senha = document.getElementById('user-senha').value.trim();
 
-            if(!pergunta || !opt1 || !opt2 || !minutos) {
-                alert("Preencha todos os campos para injetar a enquete!");
-                return;
-            }
+            if(!id || !senha) { alert("Preencha todos os campos!"); return; }
 
-            const novaEnquete = {
-                id: "E-" + Math.floor(100 + Math.random() * 900),
-                pergunta: pergunta,
-                opt1: opt1,
-                opt2: opt2,
-                votos: { opt1: 0, opt2: 0 },
-                fim: Date.now() + (minutos * 60 * 1000)
-            };
-
-            bancoEnquetes.push(novaEnquete);
-            salvarDados();
-            
-            // Limpa os inputs
-            document.getElementById('adm-pergunta').value = '';
-            document.getElementById('adm-opt1').value = '';
-            document.getElementById('adm-opt2').value = '';
-            document.getElementById('adm-tempo').value = '';
-
-            atualizarTelas();
-        }
-
-        function admExcluirEnquete(idEnquete) {
-            if (confirm("Tem certeza que deseja excluir esta enquete permanentemente da plataforma?")) {
-                bancoEnquetes = bancoEnquetes.filter(enq => enq.id !== idEnquete);
-                salvarDados();
-                atualizarTelas();
-            }
-        }
-
-        // --- FUNÇÕES DA SEÇÃO 4 & 5 (GERENCIAMENTO DE MEMBROS) ---
-        function admModificarSaldo() {
-            const id = document.getElementById('adm-user-id').value;
-            const qtd = parseFloat(document.getElementById('adm-user-qtd').value);
-
-            if(!id || isNaN(qtd)) {
-                alert("Insira um ID válido e a quantidade de moedas.");
-                return;
-            }
-
-            let membro = listaMembros.find(m => m.id === id);
-            if(membro) {
-                membro.saldo = qtd;
+            if (modoLogin) {
+                if(id === 'admin' && senha === 'admin123') {
+                    localStorage.setItem('vox_usuario', 'admin');
+                    window.location.href = 'adm.html';
+                    return;
+                }
+                const { data, error } = await supabase.from('membros').select('*').eq('id', id).eq('senha', senha).single();
+                if(error || !data) { alert("Usuário ou senha incorretos!"); } 
+                else {
+                    localStorage.setItem('vox_usuario', id);
+                    window.location.href = 'dashboard.html';
+                }
             } else {
-                listaMembros.push({ id: id, saldo: qtd, saqueSolicitado: 0.00 });
-            }
+                const { data: existente } = await supabase.from('membros').select('id').eq('id', id).maybeSingle();
+                if(existente) { alert("Este ID já está em uso!"); return; }
 
-            salvarDados();
-            document.getElementById('adm-user-id').value = '';
-            document.getElementById('adm-user-qtd').value = '';
-            atualizarTelas();
-        }
-
-        function admExcluirMembro(idMembro) {
-            if (confirm("Deseja mesmo remover/banir este membro do sistema?")) {
-                listaMembros = listaMembros.filter(m => m.id !== idMembro);
-                salvarDados();
-                atualizarTelas();
+                const { error } = await supabase.from('membros').insert([{ id, senha, saldo: 100.00 }]);
+                if(error) { alert("Erro ao cadastrar!"); } 
+                else { alert("Cadastro realizado com sucesso! Faça o login."); alternarModo(); }
             }
         }
-
-        // --- FUNÇÕES DA INTERFACE DO CLIENTE (VOTAÇÃO E CÁLCULO) ---
-        function selecionarOpcao(idEnquete, opcao) {
-            opcaoSelecionadaLocal[idEnquete] = opcao;
-            renderizarListaEnquetesCliente();
-        }
-
-        function clienteConfirmarVoto(idEnquete) {
-            const escolha = opcaoSelecionadaLocal[idEnquete];
-            const inputQtd = document.getElementById(`qtd-voto-${idEnquete}`);
-            const qtdMoedas = parseFloat(inputQtd.value);
-
-            if (!escolha) {
-                alert("Selecione uma das opções antes de confirmar!");
-                return;
-            }
-            if (isNaN(qtdMoedas) || qtdMoedas <= 0) {
-                alert("Digite uma quantidade válida de moedas para votar.");
-                return;
-            }
-            if (qtdMoedas > meuSaldo) {
-                alert("Saldo insuficiente para processar este palpite!");
-                return;
-            }
-
-            const enq = bancoEnquetes.find(e => e.id === idEnquete);
-            if (Date.now() > enq.fim) {
-                alert("O tempo para esta previsão já se esgotou!");
-                return;
-            }
-
-            // Deduz o saldo e injeta o voto no somatório global
-            meuSaldo -= qtdMoedas;
-            enq.votos[escolha] += qtdMoedas;
-
-            salvarDados();
-            atualizarTelas();
-            alert("Palpite computado com sucesso!");
-        }
-
-        // --- SISTEMA DE RENDERIZAÇÃO E ATUALIZAÇÃO SÍNCRONA ---
-        function renderizarTabelaEnquetesADM() {
-            const tbody = document.getElementById('tabela-enquetes-adm');
-            tbody.innerHTML = '';
-
-            bancoEnquetes.forEach(enq => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="font-weight:bold;">${enq.id}</td>
-                    <td>${enq.pergunta}</td>
-                    <td id="adm-timer-${enq.id}">Calculando...</td>
-                    <td>O1: ${enq.votos.opt1} | O2: ${enq.votos.opt2}</td>
-                    <td>
-                        <button class="btn-red" onclick="admExcluirEnquete('${enq.id}')" style="padding: 4px 8px; font-size:12px;">Excluir</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function renderizarTabelaMembrosADM() {
-            const tbody = document.getElementById('tabela-membros-adm');
-            tbody.innerHTML = '';
-
-            listaMembros.forEach(m => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${m.id}</td>
-                    <td style="color:var(--accent-green); font-weight:bold;">R$ ${m.saldo.toFixed(2)}</td>
-                    <td style="color:var(--text-muted);">R$ ${m.saqueSolicitado.toFixed(2)}</td>
-                    <td>
-                        <button class="btn-blue" onclick="document.getElementById('adm-user-id').value='${m.id}'; document.getElementById('adm-user-qtd').focus();" style="padding: 4px 8px; font-size:12px;">Mudar Saldo</button>
-                        <button class="btn-red" onclick="admExcluirMembro('${m.id}')" style="padding: 4px 8px; font-size:12px; margin-left:5px;">Excluir</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function renderizarListaEnquetesCliente() {
-            const container = document.getElementById('lista-enquetes-cliente');
-            container.innerHTML = '';
-
-            if (bancoEnquetes.length === 0) {
-                container.innerHTML = `<p style="text-align:center; color:var(--text-muted);">Nenhuma previsão ativa no momento.</p>`;
-                return;
-            }
-
-            bancoEnquetes.forEach(enq => {
-                // Cálculo automático e em tempo real de qual resposta está liderando por soma global
-                let txtTendencia = "Aguardando palpites...";
-                let corTendencia = "var(--text-muted)";
-
-                if (enq.votos.opt1 > enq.votos.opt2) {
-                    txtTendencia = `📈 Liderando: ${enq.opt1}`;
-                    corTendencia = "var(--accent-green)";
-                } else if (enq.votos.opt2 > enq.votos.opt1) {
-                    txtTendencia = `📈 Liderando: ${enq.opt2}`;
-                    corTendencia = "var(--accent-green)";
-                } else if (enq.votos.opt1 > 0 && enq.votos.opt1 === enq.votos.opt2) {
-                    txtTendencia = "Empate Técnico no Momento!";
-                    corTendencia = "#f59e0b"; // Amarelo
-                }
-
-                const escolhaAtual = opcaoSelecionadaLocal[enq.id];
-
-                const card = document.createElement('div');
-                card.className = 'card-previsao';
-                card.innerHTML = `
-                    <div class="status-header">
-                        <span class="status-tag" style="color:#ef4444;">🔥 Enquete em Andamento</span>
-                        <div class="tendencia-txt" style="color: ${corTendencia}; font-weight: bold;">${txtTendencia}</div>
-                    </div>
-
-                    <div class="pergunta-txt">${enq.pergunta}</div>
-
-                    <div class="opcao-row ${escolhaAtual === 'opt1' ? 'selecionada' : ''}" onclick="selecionarOpcao('${enq.id}', 'opt1')">
-                        <span>${enq.opt1}</span>
-                        <span style="color:var(--text-muted); font-size:12px;">🪙 ${enq.votos.opt1}</span>
-                    </div>
-
-                    <div class="opcao-row ${escolhaAtual === 'opt2' ? 'selecionada' : ''}" onclick="selecionarOpcao('${enq.id}', 'opt2')">
-                        <span>${enq.opt2}</span>
-                        <span style="color:var(--text-muted); font-size:12px;">🪙 ${enq.votos.opt2}</span>
-                    </div>
-
-                    <div style="margin-top:15px;">
-                        <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px;">Quantas moedas deseja votar?</label>
-                        <input type="number" id="qtd-voto-${enq.id}" value="1" min="1" style="margin-bottom:10px;">
-                        <button class="btn-blue" style="width:100%; padding:12px;" onclick="clienteConfirmarVoto('${enq.id}')">Confirmar Palpites</button>
-                    </div>
-
-                    <div class="timer-box">
-                        <div class="timer-title" id="timer-title-${enq.id}">⏱️ Tempo Restante</div>
-                        <div class="timer-clock" id="cliente-clock-${enq.id}">00:00:00</div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function atualizarTelas() {
-            document.getElementById('saldo-topo').innerText = `🪙 ${meuSaldo.toFixed(2)} Moedas`;
-            renderizarTabelaEnquetesADM();
-            renderizarTabelaMembrosADM();
-            renderizarListaEnquetesCliente();
-        }
-
-        // --- RELÓGIO REGRESSIVO UNIFICADO ---
-        setInterval(() => {
-            bancoEnquetes.forEach(enq => {
-                const agora = Date.now();
-                const diff = enq.fim - agora;
-
-                let textoTimer = "00:00:00";
-                if (diff > 0) {
-                    const hrs = String(Math.floor(diff / 3600000)).padStart(2, '0');
-                    const mins = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
-                    const segs = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
-                    textoTimer = `${hrs}:${mins}:${segs}`;
-                } else {
-                    // Trata visualmente o esgotamento no cliente se houver o elemento na tela
-                    const tituloTimer = document.getElementById(`timer-title-${enq.id}`);
-                    if (tituloTimer) tituloTimer.innerText = "🚨 TEMPO ESGOTADO";
-                }
-
-                // Atualiza na tabela administrativa
-                const admClock = document.getElementById(`adm-timer-${enq.id}`);
-                if (admClock) admClock.innerText = textoTimer;
-
-                // Atualiza no painel do cliente
-                const clienteClock = document.getElementById(`cliente-clock-${enq.id}`);
-                if (clienteClock) clienteClock.innerText = textoTimer;
-            });
-        }, 1000);
-
-        // Inicialização Inicial da Página
-        atualizarTelas();
     </script>
 </body>
 </html>
