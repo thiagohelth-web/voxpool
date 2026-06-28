@@ -5,63 +5,166 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VoxPopuli - Entrar</title>
     <style>
-        body { background-color: #0b0f19; color: #f3f4f6; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: #111827; border: 1px solid #374151; padding: 30px; border-radius: 12px; width: 100%; max-width: 350px; text-align: center; }
-        h2 { color: #3b82f6; margin-bottom: 20px; }
-        input { background: #1f2937; border: 1px solid #374151; color: white; padding: 12px; border-radius: 6px; width: 100%; margin-bottom: 15px; box-sizing: border-box; }
-        button { background: #2563eb; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .alternar { margin-top: 15px; font-size: 14px; color: #9ca3af; cursor: pointer; }
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #111827;
+            --bg-input: #1f2937;
+            --primary-blue: #2563eb;
+            --accent-green: #10b981;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #374151;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        h2 { text-align: center; margin-bottom: 24px; color: #3b82f6; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 14px; }
+        input {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: white;
+            font-size: 16px;
+        }
+        input:focus { border-color: var(--primary-blue); outline: none; }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn:hover { background: #1d4ed8; }
+        .toggle-link {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+        .toggle-link:hover { color: var(--text-main); }
     </style>
+    <!-- Carrega a biblioteca oficial do Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
     <div class="login-card">
-        <h2 id="tela-titulo">VoxPopuli Login</h2>
-        <input type="text" id="user-id" placeholder="Digite seu ID de Usuário">
-        <input type="password" id="user-senha" placeholder="Digite sua Senha">
-        <button onclick="executarAcao()" id="btn-acao">Entrar na Plataforma</button>
-        <div class="alternar" onclick="alternarModo()" id="btn-alternar">Não tem conta? Cadastre-se aqui</div>
+        <h2 id="titulo-tela">VoxPopuli Login</h2>
+        
+        <div class="input-group">
+            <label for="usuario">ID de Usuário</label>
+            <input type="text" id="usuario" placeholder="Digite seu ID de Usuário">
+        </div>
+
+        <div class="input-group">
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" placeholder="Digite sua Senha">
+        </div>
+
+        <button class="btn" id="btn-acao" onclick="executarAcao()">Entrar na Plataforma</button>
+        
+        <!-- TEXTO CORRIGIDO AQUI: Agora é um link clicável de verdade -->
+        <div class="toggle-link" id="link-alternar" onclick="toggleModo()">Não tem conta? Cadastre-se aqui</div>
     </div>
 
     <script>
+        // Configurações do seu banco de dados Supabase
         const SUPABASE_URL = "https://xxxzluqjgqwkpzjjxpbj.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHpsdXFqZ3F3a3B6amp4cGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MTA2NjcsImV4cCI6MjA5ODE4NjY2N30.VzGPY5L8EhKt7-ARJaShpM6mMl8kA2tlRG_S4dtUPzc";
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let modoLogin = true;
+        let modoCadastro = false;
 
-        function alternarModo() {
-            modoLogin = !modoLogin;
-            document.getElementById('tela-titulo').innerText = modoLogin ? "VoxPopuli Login" : "Criar Nova Conta";
-            document.getElementById('btn-acao').innerText = modoLogin ? "Entrar na Plataforma" : "Concluir Cadastro";
-            document.getElementById('btn-alternar').innerText = modoLogin ? "Não tem conta? Cadastre-se aqui" : "Já tem conta? Faça Login";
+        function toggleModo() {
+            modoCadastro = !modoCadastro;
+            const titulo = document.getElementById('titulo-tela');
+            const btn = document.getElementById('btn-acao');
+            const link = document.getElementById('link-alternar');
+
+            if(modoCadastro) {
+                titulo.innerText = "Criar Nova Conta";
+                btn.innerText = "Concluir Cadastro";
+                link.innerText = "Já tem uma conta? Faça Login";
+                btn.style.background = "var(--accent-green)";
+            } else {
+                titulo.innerText = "VoxPopuli Login";
+                btn.innerText = "Entrar na Plataforma";
+                link.innerText = "Não tem conta? Cadastre-se aqui";
+                btn.style.background = "var(--primary-blue)";
+            }
         }
 
         async function executarAcao() {
-            const id = document.getElementById('user-id').value.trim();
-            const senha = document.getElementById('user-senha').value.trim();
+            const userIn = document.getElementById('usuario').value.trim();
+            const passIn = document.getElementById('senha').value.trim();
 
-            if(!id || !senha) { alert("Preencha todos os campos!"); return; }
+            if(!userIn || !passIn) {
+                alert("Por favor, preencha todos os campos!");
+                return;
+            }
 
-            if (modoLogin) {
-                if(id === 'admin' && senha === 'admin123') {
-                    localStorage.setItem('vox_usuario', 'admin');
-                    window.location.href = 'adm.html';
+            // LOGIN DE ADMINISTRADOR
+            if(!modoCadastro && userIn === 'admin' && passIn === 'admin123') {
+                localStorage.setItem('vox_usuario', 'admin');
+                window.location.href = 'adm.html';
+                return;
+            }
+
+            if(modoCadastro) {
+                // REGRA DE CADASTRO
+                if(userIn === 'admin') { alert("Nome 'admin' é reservado!"); return; }
+
+                // Verifica se usuário já existe
+                const { data: existente } = await supabase.from('membros').select('id').eq('id', userIn).maybeSingle();
+                if(existente) {
+                    alert("Este ID de usuário já está sendo usado!");
                     return;
                 }
-                const { data, error } = await supabase.from('membros').select('*').eq('id', id).eq('senha', senha).single();
-                if(error || !data) { alert("Usuário ou senha incorretos!"); } 
-                else {
-                    localStorage.setItem('vox_usuario', id);
-                    window.location.href = 'dashboard.html';
+
+                // Insere novo membro com saldo inicial de 100 moedas
+                const { error } = await supabase.from('membros').insert([{ id: userIn, senha: passIn, saldo: 100.00 }]);
+                if(error) {
+                    alert("Erro ao cadastrar: " + error.message);
+                } else {
+                    alert("Cadastro realizado com sucesso! Ganhou 100 moedas de bônus.");
+                    toggleModo(); // Volta para a tela de login
                 }
             } else {
-                const { data: existente } = await supabase.from('membros').select('id').eq('id', id).maybeSingle();
-                if(existente) { alert("Este ID já está em uso!"); return; }
-
-                const { error } = await supabase.from('membros').insert([{ id, senha, saldo: 100.00 }]);
-                if(error) { alert("Erro ao cadastrar!"); } 
-                else { alert("Cadastro realizado com sucesso! Faça o login."); alternarModo(); }
+                // REGRA DE LOGIN DO MEMBRO
+                const { data: membro, error } = await supabase.from('membros').select('*').eq('id', userIn).maybeSingle();
+                
+                if(!membro || membro.senha !== passIn) {
+                    alert("ID de usuário ou senha incorretos!");
+                } else {
+                    localStorage.setItem('vox_usuario', membro.id);
+                    window.location.href = 'dashboard.html';
+                }
             }
         }
     </script>
