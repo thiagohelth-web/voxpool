@@ -107,8 +107,8 @@
                             <td><b>${perguntaExibida}</b></td>
                             <td>1: ${o1} <br> 2: ${o2}</td>
                             <td>
-                                <button class="btn-resolver" onclick="pagarMembros('${enq.id}', '1')">Opção 1 Certa</button>
-                                <button class="btn-resolver" onclick="pagarMembros('${enq.id}', '2')" style="background:#3b82f6;">Opção 2 Certa</button>
+                                <button class="btn-resolver" onclick="apurarEnquete('${enq.id}', '1')">Opção 1 Certa</button>
+                                <button class="btn-resolver" onclick="apurarEnquete('${enq.id}', '2')" style="background:#3b82f6;">Opção 2 Certa</button>
                                 <button class="btn-del" onclick="deletarEnquete('${enq.id}')">Excluir</button>
                             </td>
                         </tr>
@@ -124,7 +124,6 @@
 
             if(!p || !o1 || !o2) { alert("Preencha todos os campos!"); return; }
 
-            // CORREÇÃO AQUI: Salva tudo estruturado apenas na coluna 'pergunta' existente
             const { error } = await clientSupabase.from('enquetes').insert([{ pergunta: `${p} [${o1} vs ${o2}]` }]);
             
             if(error) { alert("Erro ao salvar: " + error.message); return; }
@@ -136,35 +135,71 @@
             carregarAdmin();
         }
 
-        async function pagarMembros(enqueteId, opcaoVencedora) {
-            let apostasLocais = JSON.parse(localStorage.getItem('minhas_apostas') || '{}');
-            const aposta = apostasLocais[enqueteId];
+        async function apurarEnquete(enqueteId, opcaoVencedora) {
+            try {
+                // 1. Busca todas as apostas feitas nesta enquete específica na nuvem
+                const { data: apostas, error: errApostas } = await clientSupabase
+                    .from('historico_apostas')
+                    .select('*')
+                    .eq('enquete_id', enqueteId.toString());
 
-            if(aposta) {
-                const valorTotal = parseFloat(aposta.valor);
-                let retorno = 0;
-
-                if(aposta.opcao == opcaoVencedora) {
-                    retorno = valorTotal * 1.49; // Lucro de 0.19 por real
-                } else {
-                    retorno = valorTotal * 0.39; // Retorno de 30% mitigado
+                if (errApostas) {
+                    alert("Erro ao buscar apostas: " + errApostas.message);
+                    return;
                 }
 
-                const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', aposta.usuario).maybeSingle();
-                if(m) {
-                    const novoSaldo = parseFloat(m.saldo) + retorno;
-                    await clientSupabase.from('membros').update({ saldo: novoSaldo }).eq('id', aposta.usuario);
+                // 2. Se houver apostas registradas, faz o processamento financeiro
+                if (apostas && apostas.length > 0) {
+                    for (const aposta of apostas) {
+                        const valorTotal = parseFloat(aposta.valor_total);
+                        let retornoCalculado = 0;
+
+                        // Aplica a lógica matemática: Lucro de 1.49x se acertar ou 0.39x mitigado se errar
+                        if (aposta.opcao_chosen === opcaoVencedora || aposta.opcao_escolhida === opcaoVencedora) {
+                            retornoCalculado = valorTotal * 1.49;
+                        } else {
+                            retornoCalculado = valorTotal * 0.39;
+                        }
+
+                        // Busca o saldo atual do membro dono desta aposta
+                        const { data: m } = await clientSupabase
+                            .from('membros')
+                            .select('saldo')
+                            .eq('id', aposta.membro_id)
+                            .maybeSingle();
+
+                        if (m) {
+                            const novoSaldo = parseFloat(m.saldo) + retornoCalculado;
+                            // Atualiza o saldo na nuvem
+                            await clientSupabase
+                                .from('membros')
+                                .update({ saldo: novoSaldo })
+                                .eq('id', aposta.membro_id);
+                        }
+                    }
+
+                    // Limpa o histórico de apostas dessa enquete encerrada para não acumular lixo
+                    await clientSupabase.from('historico_apostas').delete().eq('enquete_id', enqueteId.toString());
                 }
+
+                // 3. Remove a enquete da lista ativa
+                await clientSupabase.from('enquetes').delete().eq('id', enqueteId);
+                
+                alert("Apuração concluída! Saldos atualizados e lucros distribuídos com sucesso.");
+                carregarAdmin();
+
+            } catch (err) {
+                console.error(err);
+                alert("Erro durante a apuração.");
             }
-
-            await clientSupabase.from('enquetes').delete().eq('id', enqueteId);
-            alert("Saldos calculados seguindo a regra matemática e enquete finalizada!");
-            carregarAdmin();
         }
 
         async function deletarEnquete(id) {
-            await clientSupabase.from('enquetes').delete().eq('id', id);
-            carregarAdmin();
+            if(confirm("Deseja realmente excluir esta enquete sem pagar ninguém?")) {
+                await clientSupabase.from('historico_apostas').delete().eq('enquete_id', id.toString());
+                await clientSupabase.from('enquetes').delete().eq('id', id);
+                carregarAdmin();
+            }
         }
 
         carregarAdmin();
