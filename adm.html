@@ -23,12 +23,13 @@
         .secao-adm { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; margin-bottom: 25px; }
         h3 { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
         .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
-        input { flex: 1; min-width: 150px; padding: 12px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: white; }
+        input, select { flex: 1; min-width: 150px; padding: 12px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: white; font-size: 14px; }
         .btn-adm { width: 100%; padding: 12px; background: var(--primary-blue); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border-bottom: 1px solid var(--border-color); padding: 12px; text-align: left; }
         .btn-resolver { background: var(--accent-green); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
         .btn-del { background: var(--accent-red); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #374151; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -39,7 +40,7 @@
         <button class="btn-sair" onclick="deslogar()">Sair</button>
     </header>
 
-    <div style="max-width: 900px; margin: 0 auto;">
+    <div style="max-width: 1000px; margin: 0 auto;">
         
         <div class="secao-adm" style="border-color: var(--accent-green);">
             <h3 style="color: var(--accent-green);">💰 Aprovação de Recargas (Mín. 9 Moedas)</h3>
@@ -57,13 +58,22 @@
         </div>
         
         <div class="secao-adm">
-            <h3>📝 Injetar Nova Enquete Diária</h3>
+            <h3>📝 Injetar Nova Previsão por Categoria</h3>
             <div class="form-row">
-                <input type="text" id="enq-pergunta" placeholder="Pergunta da enquete">
-                <input type="text" id="enq-op1" placeholder="Opção 1">
-                <input type="text" id="enq-op2" placeholder="Opção 2">
+                <select id="enq-categoria" onchange="ajustarFormulario()">
+                    <option value="Mercado Financeiro">📈 Mercado Financeiro</option>
+                    <option value="Política">🏛️ Política</option>
+                    <option value="Esporte">⚽ Esporte</option>
+                    <option value="Conhecimentos Gerais">🧠 Conhecimentos Gerais</option>
+                </select>
             </div>
-            <button class="btn-adm" onclick="injetarEnquete()">Injetar Enquete na Nuvem</button>
+            
+            <div class="form-row" id="campos-dinamicos">
+                <input type="text" id="enq-ativo" placeholder="Ex: GOLD, BTC/USD, KLBN11, S&P 500">
+                <input type="text" id="enq-fechamento" placeholder="Preço de Fechamento de Ontem (f: X)">
+            </div>
+            
+            <button class="btn-adm" onclick="injetarEnquete()">Injetar na Categoria Selecionada</button>
         </div>
 
         <div class="secao-adm" style="border-color: var(--primary-blue);">
@@ -71,9 +81,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Pergunta</th>
-                        <th>Opções Registradas</th>
-                        <th>Definir Resposta Certa (Pagar Lucros)</th>
+                        <th>Categoria</th>
+                        <th>Previsão / Ativo</th>
+                        <th>Opções / Referência</th>
+                        <th>Definir Vencedor (Pagar Lucros)</th>
                     </tr>
                 </thead>
                 <tbody id="tabela-enquetes"></tbody>
@@ -93,50 +104,58 @@
             window.location.href = 'index.html';
         }
 
+        function ajustarFormulario() {
+            const cat = document.getElementById('enq-categoria').value;
+            const container = document.getElementById('campos-dinamicos');
+            
+            if (cat === "Mercado Financeiro") {
+                container.innerHTML = `
+                    <input type="text" id="enq-ativo" placeholder="Ex: GOLD, BTC/USD, KLBN11, S&P 500">
+                    <input type="text" id="enq-fechamento" placeholder="Preço de Fechamento de Ontem (f: X)">
+                `;
+            } else {
+                container.innerHTML = `
+                    <input type="text" id="enq-pergunta" placeholder="Digite a pergunta da previsão">
+                    <input type="text" id="enq-op1" placeholder="Opção 1">
+                    <input type="text" id="enq-op2" placeholder="Opção 2">
+                `;
+            }
+        }
+
         async function carregarAdmin() {
             try {
-                // 1. Carrega os Pedidos de Recarga Pendentes
+                // 1. Pedidos de Recarga
                 const { data: recargas } = await clientSupabase.from('pedidos_recarga').select('*').eq('status', 'pendente');
                 const tabelaRecargas = document.getElementById('tabela-recargas');
                 tabelaRecargas.innerHTML = "";
-
                 if (!recargas || recargas.length === 0) {
-                    tabelaRecargas.innerHTML = "<tr><td colspan='4' style='text-align:center; color:gray;'>Nenhuma solicitação de recarga pendente.</td></tr>";
+                    tabelaRecargas.innerHTML = "<tr><td colspan='4' style='text-align:center; color:gray;'>Nenhuma solicitação pendente.</td></tr>";
                 } else {
                     recargas.forEach(rec => {
                         const valor = parseFloat(rec.quantidade_moedas);
-                        tabelaRecargas.innerHTML += `
-                            <tr>
-                                <td><b>${rec.membro_id}</b></td>
-                                <td style="color: var(--accent-green); font-weight:bold;">${valor} Moedas</td>
-                                <td>R$ ${valor.toFixed(2)}</td>
-                                <td>
-                                    <button class="btn-resolver" onclick="aprovarRecarga('${rec.id}', '${rec.membro_id}', ${valor})">Aceitar e Liberar</button>
-                                    <button class="btn-del" onclick="rejeitarRecarga('${rec.id}')">Recusar</button>
-                                </td>
-                            </tr>
-                        `;
+                        tabelaRecargas.innerHTML += `<tr><td><b>${rec.membro_id}</b></td><td style="color:var(--accent-green); font-weight:bold;">${valor} Moedas</td><td>R$ ${valor.toFixed(2)}</td><td><button class="btn-resolver" onclick="aprovarRecarga('${rec.id}', '${rec.membro_id}', ${valor})">Aceitar</button><button class="btn-del" onclick="rejeitarRecarga('${rec.id}')">Recusar</button></td></tr>`;
                     });
                 }
 
-                // 2. Carrega as Enquetes Ativas
+                // 2. Previsões Ativas
                 const { data: enquetes } = await clientSupabase.from('enquetes').select('*');
                 const tabela = document.getElementById('tabela-enquetes');
                 tabela.innerHTML = "";
 
                 if(!enquetes || enquetes.length === 0) {
-                    tabela.innerHTML = "<tr><td colspan='3' style='text-align:center; color:gray;'>Nenhuma enquete aberta para apuração.</td></tr>";
+                    tabela.innerHTML = "<tr><td colspan='4' style='text-align:center; color:gray;'>Nenhuma previsão aberta.</td></tr>";
                     return;
                 }
 
                 enquetes.forEach(enq => {
+                    const categoria = enq.categoria || "Mercado Financeiro";
                     let o1 = "Opção 1", o2 = "Opção 2";
-                    let perguntaExibida = enq.pergunta;
+                    let exibição = enq.pergunta;
 
                     if (enq.pergunta.includes("[") && enq.pergunta.includes("vs")) {
                         try {
                             const partes = enq.pergunta.split(" [");
-                            perguntaExibida = partes[0];
+                            exibição = partes[0];
                             const opcoesRaw = partes[1].replace("]", "").split(" vs ");
                             o1 = opcoesRaw[0]; o2 = opcoesRaw[1];
                         } catch(e){}
@@ -144,11 +163,12 @@
 
                     tabela.innerHTML += `
                         <tr>
-                            <td><b>${perguntaExibida}</b></td>
+                            <td><span class="badge">${categoria}</span></td>
+                            <td><b>${exibição}</b></td>
                             <td>1: ${o1} <br> 2: ${o2}</td>
                             <td>
-                                <button class="btn-resolver" onclick="apurarEnquete('${enq.id}', '1')">Opção 1 Certa</button>
-                                <button class="btn-resolver" onclick="apurarEnquete('${enq.id}', '2')" style="background:#3b82f6;">Opção 2 Certa</button>
+                                <button class="btn-resolver" onclick="apurarEnquete('${enq.id}', '1')">${o1} Ganhou</button>
+                                <button class="btn-resolver" onclick="apurarEnquete('${enq.id}', '2')" style="background:#3b82f6;">${o2} Ganhou</button>
                                 <button class="btn-del" onclick="deletarEnquete('${enq.id}')">Excluir</button>
                             </td>
                         </tr>
@@ -157,92 +177,70 @@
             } catch(e) { console.error(e); }
         }
 
-        // FUNÇÃO NOVA: Aprova o pagamento e injeta o saldo na conta do membro
-        async function aprovarRecarga(pedidoId, membroId, valorMoedas) {
-            try {
-                // Puxa o saldo atual do membro
-                const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', membroId).maybeSingle();
-                
-                let saldoAtual = m ? parseFloat(m.saldo) : 0;
-                const novoSaldo = saldoAtual + valorMoedas;
+        async function injetarEnquete() {
+            const categoria = document.getElementById('enq-categoria').value;
+            let perguntaFinal = "";
 
-                // 1. Atualiza o saldo do membro
-                await clientSupabase.from('membros').update({ saldo: novoSaldo }).eq('id', membroId);
-                
-                // 2. Muda o status do pedido para 'aprovado' para sumir da lista
-                await clientSupabase.from('pedidos_recarga').update({ status: 'aprovado' }).eq('id', pedidoId);
-
-                alert("Recarga aprovada com sucesso! O saldo já foi adicionado ao membro.");
-                carregarAdmin();
-            } catch (err) {
-                console.error(err);
-                alert("Erro ao aprovar recarga.");
+            if (categoria === "Mercado Financeiro") {
+                const ativo = document.getElementById('enq-ativo').value.trim();
+                const fechamento = document.getElementById('enq-fechamento').value.trim();
+                if(!ativo || !fechamento) { alert("Preencha o Ativo e o Fechamento!"); return; }
+                // Estrutura interna combinada padrão: Nome do Ativo [f: Preço vs ACIMA vs ABAIXO]
+                perguntaFinal = `${ativo} [f: ${fechamento} vs ACIMA vs ABAIXO]`;
+            } else {
+                const p = document.getElementById('enq-pergunta').value.trim();
+                const o1 = document.getElementById('enq-op1').value.trim();
+                const o2 = document.getElementById('enq-op2').value.trim();
+                if(!p || !o1 || !o2) { alert("Preencha todos os campos!"); return; }
+                perguntaFinal = `${p} [${o1} vs ${o2}]`;
             }
+
+            const { error } = await clientSupabase.from('enquetes').insert([{ pergunta: perguntaFinal, categoria: categoria }]);
+            if(error) { alert("Erro ao salvar: " + error.message); return; }
+
+            alert("Previsão injetada com sucesso!");
+            ajustarFormulario();
+            carregarAdmin();
         }
 
-        // FUNÇÃO NOVA: Rejeita o pedido de recarga
+        async function aprovarRecarga(pedidoId, membroId, valorMoedas) {
+            const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', membroId).maybeSingle();
+            let saldoAtual = m ? parseFloat(m.saldo) : 0;
+            await clientSupabase.from('membros').update({ saldo: saldoAtual + valorMoedas }).eq('id', membroId);
+            await clientSupabase.from('pedidos_recarga').update({ status: 'aprovado' }).eq('id', pedidoId);
+            alert("Recarga liberada!");
+            carregarAdmin();
+        }
+
         async function rejeitarRecarga(pedidoId) {
-            if (confirm("Deseja realmente recusar e excluir esta solicitação?")) {
+            if (confirm("Recusar pedido?")) {
                 await clientSupabase.from('pedidos_recarga').delete().eq('id', pedidoId);
                 carregarAdmin();
             }
         }
 
-        async function injetarEnquete() {
-            const p = document.getElementById('enq-pergunta').value.trim();
-            const o1 = document.getElementById('enq-op1').value.trim();
-            const o2 = document.getElementById('enq-op2').value.trim();
-
-            if(!p || !o1 || !o2) { alert("Preencha todos os campos!"); return; }
-
-            const { error } = await clientSupabase.from('enquetes').insert([{ pergunta: `${p} [${o1} vs ${o2}]` }]);
-            if(error) { alert("Erro ao salvar: " + error.message); return; }
-
-            alert("Enquete injetada com sucesso!");
-            document.getElementById('enq-pergunta').value = "";
-            document.getElementById('enq-op1').value = "";
-            document.getElementById('enq-op2').value = "";
-            carregarAdmin();
-        }
-
         async function apurarEnquete(enqueteId, opcaoVencedora) {
             try {
-                const { data: apostas, error: errApostas } = await clientSupabase
-                    .from('historico_apostas')
-                    .select('*')
-                    .eq('enquete_id', enqueteId.toString());
-
-                if (errApostas) { alert("Erro ao buscar apostas: " + errApostas.message); return; }
-
+                const { data: apostas } = await clientSupabase.from('historico_apostas').select('*').eq('enquete_id', enqueteId.toString());
                 if (apostas && apostas.length > 0) {
                     for (const aposta of apostas) {
                         const valorTotal = parseFloat(aposta.valor_total);
-                        let retornoCalculado = 0;
-
-                        if (aposta.opcao_escolhida === opcaoVencedora.toString()) {
-                            retornoCalculado = valorTotal * 1.49;
-                        } else {
-                            retornoCalculado = valorTotal * 0.39;
-                        }
-
+                        let retornoCalculado = aposta.opcao_escolhida === opcaoVencedora.toString() ? valorTotal * 1.49 : valorTotal * 0.39;
                         const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', aposta.membro_id).maybeSingle();
-
                         if (m) {
-                            const novoSaldo = parseFloat(m.saldo) + retornoCalculado;
-                            await clientSupabase.from('membros').update({ saldo: novoSaldo }).eq('id', aposta.membro_id);
+                            await clientSupabase.from('membros').update({ saldo: parseFloat(m.saldo) + retornoCalculado }).eq('id', aposta.membro_id);
                         }
                     }
                     await clientSupabase.from('historico_apostas').delete().eq('enquete_id', enqueteId.toString());
                 }
-
                 await clientSupabase.from('enquetes').delete().eq('id', enqueteId);
-                alert("Apuração concluída! Saldos atualizados e lucros distribuídos com sucesso.");
+                alert("Apuração concluída e saldos pagos!");
                 carregarAdmin();
-            } catch (err) { console.error(err); alert("Erro durante a apuração."); }
+            } catch (err) { console.error(err); }
         }
 
         async function deletarEnquete(id) {
-            if(confirm("Deseja realmente excluir esta enquete sem pagar ninguém?")) {
+            if(confirm("Excluir previsão?")) {
                 await clientSupabase.from('historico_apostas').delete().eq('enquete_id', id.toString());
                 await clientSupabase.from('enquetes').delete().eq('id', id);
                 carregarAdmin();
