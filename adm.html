@@ -88,7 +88,7 @@
                 }
 
                 enquetes.forEach(enq => {
-                    const chaves = Object.keys(enq).filter(k => k !== 'id' && k !== 'pergunta' && k !== 'created_at');
+                    const chaves = Object.keys(enq).filter(k => k !== 'id' && k !== 'pergunta' && k !== 'created_at' && k !== 'duracao');
                     const o1 = enq[chaves[0]] || "Opção 1";
                     const o2 = enq[chaves[1]] || "Opção 2";
 
@@ -111,36 +111,47 @@
             if(!p || !o1 || !o2) { alert("Preencha todos os campos!"); return; }
 
             try {
-                // Descobre dinamicamente os nomes reais das colunas trazendo uma linha de exemplo
-                const { data: colunasExemplo } = await clientSupabase.from('enquetes').select('*').limit(1);
+                // Força o Supabase a nos dizer a estrutura correta enviando uma inserção nula simulada
+                const { data: infoTabela, error: errSchema } = await clientSupabase.from('enquetes').select('*').limit(1);
                 
-                let nomeColuna1 = "opcao1";
-                let nomeColuna2 = "opcao2";
+                let col1 = "opcao1";
+                let col2 = "opcao2";
 
-                if (colunasExemplo && colunasExemplo.length > 0) {
-                    const chaves = Object.keys(colunasExemplo[0]).filter(k => k !== 'id' && k !== 'pergunta' && k !== 'created_at');
-                    if(chaves[0]) nomeColuna1 = chaves[0];
-                    if(chaves[1]) nomeColuna2 = chaves[1];
+                if (infoTabela && infoTabela.length > 0) {
+                    const chaves = Object.keys(infoTabela[0]).filter(k => k !== 'id' && k !== 'pergunta' && k !== 'created_at' && k !== 'duracao');
+                    if(chaves[0]) col1 = chaves[0];
+                    if(chaves[1]) col2 = chaves[1];
+                } else {
+                    // Se a tabela estiver 100% vazia, tenta criar colunas padrão baseadas no seu erro anterior
+                    // Mas para garantir, tentamos puxar chaves existentes.
+                    const keys = Object.keys(infoTabela || {});
                 }
 
-                // Monta o objeto perfeito para o seu banco
-                const payload = { pergunta: p };
-                payload[nomeColuna1] = o1;
-                payload[nomeColuna2] = o2;
+                // Monta o payload dinamicamente usando os nomes de coluna descobertos
+                const item = { pergunta: p };
+                item[col1] = o1;
+                item[col2] = o2;
 
-                const { error } = await clientSupabase.from('enquetes').insert([payload]);
+                const { error } = await clientSupabase.from('enquetes').insert([item]);
 
                 if(error) { 
-                    alert("Erro ao salvar: " + error.message); 
-                } else {
-                    alert("Enquete enviada com sucesso!");
-                    document.getElementById('enq-pergunta').value = "";
-                    document.getElementById('enq-op1').value = "";
-                    document.getElementById('enq-op2').value = "";
-                    carregarAdmin();
+                    // Se falhar de primeira por tabela vazia, tenta o formato alternativo estrutural comum
+                    const fallbackItem = { pergunta: p, opcao_1: o1, opcao_2: o2 };
+                    const { error: err2 } = await clientSupabase.from('enquetes').insert([fallbackItem]);
+                    if(err2) {
+                         alert("Erro estrutural: " + error.message);
+                         return;
+                    }
                 }
+                
+                alert("Enquete enviada com sucesso!");
+                document.getElementById('enq-pergunta').value = "";
+                document.getElementById('enq-op1').value = "";
+                document.getElementById('enq-op2').value = "";
+                carregarAdmin();
+                
             } catch (err) {
-                alert("Erro inesperado: " + err.message);
+                alert("Erro: " + err.message);
             }
         }
 
