@@ -3,198 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxPopuli - Entrar</title>
+    <title>VoxPopuli - Autenticação</title>
     <style>
-        :root {
-            --bg-main: #0b0f19;
-            --bg-card: #111827;
-            --bg-input: #1f2937;
-            --primary-blue: #2563eb;
-            --accent-green: #10b981;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --border-color: #374151;
+        :root { 
+            --bg: #0b0f19; 
+            --card: #111827; 
+            --blue: #2563eb; 
+            --text: #f3f4f6; 
+            --border: #374151;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .login-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            padding: 40px;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        h2 { text-align: center; margin-bottom: 24px; color: #3b82f6; }
-        .input-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 14px; }
-        input {
-            width: 100%;
-            padding: 12px;
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: white;
-            font-size: 16px;
-        }
-        input:focus { border-color: var(--primary-blue); outline: none; }
-        .btn {
-            width: 100%;
-            padding: 12px;
-            background: var(--primary-blue);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        .btn:hover { background: #1d4ed8; }
-        .toggle-link {
-            text-align: center;
-            margin-top: 20px;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 14px;
-            text-decoration: underline;
-        }
-        .toggle-link:hover { color: var(--text-main); }
+        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .auth-container { background: var(--card); border: 1px solid var(--border); padding: 30px; border-radius: 12px; max-width: 400px; width: 100%; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); }
+        .logo { font-size: 28px; font-weight: bold; color: #3b82f6; text-align: center; margin-bottom: 25px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-size: 14px; color: #9ca3af; }
+        input { width: 100%; padding: 12px; background: #1f2937; border: 1px solid var(--border); border-radius: 6px; color: white; font-size: 14px; }
+        input:focus { outline: none; border-color: var(--blue); }
+        .btn-auth { width: 100%; padding: 12px; background: var(--blue); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; }
+        .btn-auth:hover { background: #1d4ed8; }
+        .switch-auth { text-align: center; margin-top: 20px; font-size: 13px; color: #9ca3af; }
+        .switch-auth a { color: #60a5fa; text-decoration: none; font-weight: bold; cursor: pointer; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-    <div class="login-card">
-        <h2 id="titulo-tela">VoxPopuli Login</h2>
-        
-        <div class="input-group">
-            <label for="usuario">ID de Usuário</label>
-            <input type="text" id="usuario" placeholder="Digite seu ID de Usuário">
+<div class="auth-container">
+    <div class="logo">VoxPopuli 📈</div>
+    
+    <!-- ÁREA DE LOGIN -->
+    <div id="area-login">
+        <h3 style="margin-bottom: 15px; text-align: center;">Acessar Painel</h3>
+        <div class="form-group">
+            <label>Usuário / ID</label>
+            <input type="text" id="login-usuario" placeholder="Digite seu usuário">
         </div>
-
-        <div class="input-group">
-            <label for="senha">Senha</label>
-            <input type="password" id="senha" placeholder="Digite sua Senha">
+        <div class="form-group">
+            <label>Senha</label>
+            <input type="password" id="login-senha" placeholder="Digite sua senha">
         </div>
-
-        <button class="btn" id="btn-acao" onclick="executarAcao()">Entrar na Plataforma</button>
-        
-        <div class="toggle-link" id="link-alternar" onclick="toggleModo()">Não tem conta? Cadastre-se aqui</div>
+        <button class="btn-auth" onclick="realizarLogin()">Entrar no Painel</button>
+        <div class="switch-auth">
+            Não tem uma conta? <a onclick="alternarTelas(true)">Cadastre-se aqui</a>
+        </div>
     </div>
 
-    <script>
-        // ATENÇÃO: Certifique-se de que estas chaves abaixo condizem com as do seu painel Supabase
-        const SUPABASE_URL = "https://xxxzluqjgqwkpzjjxpbj.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHpsdXFqZ3F3a3B6amp4cGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MTA2NjcsImV4cCI6MjA5ODE4NjY2N30.VzGPY5L8EhKt7-ARJaShpM6mMl8kA2tlRG_S4dtUPzc";
-        
-        let clientSupabase = null;
-        
-        // Inicializa o Supabase tratando possíveis erros de credenciais
-        try {
-            clientSupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        } catch (e) {
-            console.error("Erro ao inicializar Supabase:", e);
+    <!-- ÁREA DE CADASTRO (ATUALIZADA) -->
+    <div id="area-cadastro" style="display: none;">
+        <h3 style="margin-bottom: 15px; text-align: center; color: #60a5fa;">Criar Nova Conta</h3>
+        <div class="form-group">
+            <label>Usuário / ID Desejado</label>
+            <input type="text" id="cad-usuario" placeholder="Ex: trader_joao">
+        </div>
+        <div class="form-group">
+            <label>Sua Senha de Acesso</label>
+            <input type="password" id="cad-senha" placeholder="Crie uma senha segura">
+        </div>
+        <!-- NOVO CAMPO SOLICITADO -->
+        <div class="form-group">
+            <label>Sua Chave PIX (Para receber Saques)</label>
+            <input type="text" id="cad-pix" placeholder="E-mail, CPF, Telefone ou Aleatória">
+            <small style="color: #9ca3af; font-size: 11px; display: block; margin-top: 4px;">
+                ⚠️ Certifique-se de digitar corretamente para não ter problemas no saque.
+            </small>
+        </div>
+        <button class="btn-auth" style="background: #10b981;" onclick="realizarCadastro()">Finalizar Cadastro</button>
+        <div class="switch-auth">
+            Já possui conta? <a onclick="alternarTelas(false)">Voltar para o Login</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = "https://xxxzluqjgqwkpzjjxpbj.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHpsdXFqZ3F3a3B6amp4cGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MTA2NjcsImV4cCI6MjA5ODE4NjY2N30.VzGPY5L8EhKt7-ARJaShpM6mMl8kA2tlRG_S4dtUPzc";
+    const clientSupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Alterna visualmente entre a tela de login e a de cadastro
+    function alternarTelas(mostrarCadastro) {
+        if (mostrarCadastro) {
+            document.getElementById('area-login').style.display = 'none';
+            document.getElementById('area-cadastro').style.display = 'block';
+        } else {
+            document.getElementById('area-login').style.display = 'block';
+            document.getElementById('area-cadastro').style.display = 'none';
+        }
+    }
+
+    // Função de Login Tradicional
+    async function realizarLogin() {
+        const usu = document.getElementById('login-usuario').value.trim();
+        const sen = document.getElementById('login-senha').value.trim();
+
+        if (!usu || !sen) {
+            alert("Por favor, preencha todos os campos!");
+            return;
         }
 
-        let modoCadastro = false;
-
-        function toggleModo() {
-            modoCadastro = !modoCadastro;
-            const titulo = document.getElementById('titulo-tela');
-            const btn = document.getElementById('btn-acao');
-            const link = document.getElementById('link-alternar');
-
-            if(modoCadastro) {
-                titulo.innerText = "Criar Nova Conta";
-                btn.innerText = "Concluir Cadastro";
-                link.innerText = "Já tem uma conta? Faça Login";
-                btn.style.background = "var(--accent-green)";
-            } else {
-                titulo.innerText = "VoxPopuli Login";
-                btn.innerText = "Entrar na Plataforma";
-                link.innerText = "Não tem conta? Cadastre-se aqui";
-                btn.style.background = "var(--primary-blue)";
-            }
+        // Se for o administrador entrando
+        if (usu === "adm" && sen === "adm123") {
+            localStorage.setItem('vox_usuario', 'adm');
+            window.location.href = 'adm.html';
+            return;
         }
 
-        async function executarAcao() {
-            const userIn = document.getElementById('usuario').value.trim();
-            const passIn = document.getElementById('senha').value.trim();
+        // Busca o membro no banco
+        const { data: membro, error } = await clientSupabase
+            .from('membros')
+            .select('*')
+            .eq('id', usu)
+            .maybeSingle();
 
-            if(!userIn || !passIn) {
-                alert("Por favor, preencha todos os campos!");
-                return;
-            }
-
-            // LOGIN DE ADMINISTRADOR LOCAL (Ignora falhas de conexão para garantir o seu acesso)
-            if(!modoCadastro && userIn === 'admin' && passIn === 'admin123') {
-                localStorage.setItem('vox_usuario', 'admin');
-                window.location.href = 'adm.html';
-                return;
-            }
-
-            // Se for tentar usar o banco e o client falhou na inicialização
-            if(!clientSupabase) {
-                alert("Erro de conexão: O banco de dados Supabase não foi configurado corretamente.");
-                return;
-            }
-
-            if(modoCadastro) {
-                // Impede criação de contas maliciosas ou erradas com o ID admin
-                if(userIn.toLowerCase() === 'admin') { 
-                    alert("O nome 'admin' é reservado e não pode ser cadastrado!"); 
-                    return; 
-                }
-
-                try {
-                    // Verifica se usuário já existe
-                    const { data: existente, error: errCheck } = await clientSupabase.from('membros').select('id').eq('id', userIn).maybeSingle();
-                    
-                    if(errCheck) throw errCheck;
-
-                    if(existente) {
-                        alert("Este ID de usuário já está sendo usado!");
-                        return;
-                    }
-
-                    // Insere novo membro
-                    const { error: errInsert } = await clientSupabase.from('membros').insert([{ id: userIn, senha: passIn, saldo: 100.00 }]);
-                    
-                    if(errInsert) throw errInsert;
-
-                    alert("Cadastro realizado com sucesso! Ganhou 100 moedas de bônus.");
-                    toggleModo();
-                    
-                } catch (error) {
-                    alert("Erro retornado pelo Supabase: " + (error.message || error));
-                }
-            } else {
-                try {
-                    // REGRA DE LOGIN DO MEMBRO COMUM
-                    const { data: membro, error: errLogin } = await clientSupabase.from('membros').select('*').eq('id', userIn).maybeSingle();
-                    
-                    if(errLogin) throw errLogin;
-
-                    if(!membro || membro.senha !== passIn) {
-                        alert("ID de usuário ou senha incorretos!");
-                    } else {
-                        localStorage.setItem('vox_usuario', membro.id);
-                        window.location.href = 'dashboard.html';
-                    }
-                } catch (error) {
-                    alert("Erro ao conectar para Login: " + (error.message || error));
-                }
-            }
+        if (error || !membro) {
+            alert("Usuário não encontrado!");
+            return;
         }
-    </script>
+
+        if (membro.senha !== sen) {
+            alert("Senha incorreta!");
+            return;
+        }
+
+        if (membro.status === "bloqueado") {
+            alert("🚨 Esta conta está bloqueada pelo administrador!");
+            return;
+        }
+
+        // Salva credencial e entra no painel do cliente
+        localStorage.setItem('vox_usuario', membro.id);
+        window.location.href = 'dashboard.html';
+    }
+
+    // NOVA FUNÇÃO DE CADASTRO SALVANDO A CHAVE PIX
+    async function realizarCadastro() {
+        const usu = document.getElementById('cad-usuario').value.trim();
+        const sen = document.getElementById('cad-senha').value.trim();
+        const pix = document.getElementById('cad-pix').value.trim();
+
+        if (!usu || !sen || !pix) {
+            alert("Todos os campos, incluindo a Chave PIX, são obrigatórios!");
+            return;
+        }
+
+        // Verifica se o ID já existe
+        const { data: existente } = await clientSupabase
+            .from('membros')
+            .select('id')
+            .eq('id', usu)
+            .maybeSingle();
+
+        if (existente) {
+            alert("Este nome de usuário já está sendo utilizado. Escolha outro!");
+            return;
+        }
+
+        // Insere o novo membro guardando a Chave PIX informada
+        const { error } = await clientSupabase.from('membros').insert([{
+            id: usu,
+            senha: sen,
+            chave_pix: pix, // Gravando a chave informada
+            saldo: 0,
+            status: 'ativo'
+        }]);
+
+        if (error) {
+            alert("Erro ao efetuar cadastro: " + error.message);
+        } else {
+            alert("Conta criada com sucesso! Você já pode fazer login.");
+            document.getElementById('cad-usuario').value = "";
+            document.getElementById('cad-senha').value = "";
+            document.getElementById('cad-pix').value = "";
+            alternarTelas(false); // Volta para o login
+        }
+    }
+</script>
 </body>
 </html>
