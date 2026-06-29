@@ -1,141 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxPopuli - ADM Central</title>
-    <style>
-        :root {
-            --bg-main: #0b0f19;
-            --bg-card: #111827;
-            --bg-input: #1f2937;
-            --primary-blue: #2563eb;
-            --accent-red: #ef4444;
-            --accent-green: #10b981;
-            --text-main: #f3f4f6;
-            --border-color: #374151;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); padding: 20px; }
-        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 30px; }
-        .logo { font-size: 24px; font-weight: bold; color: #3b82f6; }
-        .btn-sair { background: #374151; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-        .secao-adm { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; margin-bottom: 25px; }
-        h3 { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-        .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
-        input { flex: 1; min-width: 150px; padding: 12px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: white; }
-        .btn-adm { width: 100%; padding: 12px; background: var(--primary-blue); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border-bottom: 1px solid var(--border-color); padding: 12px; text-align: left; }
-        .btn-resolver { background: var(--accent-green); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
-        .btn-del { background: var(--accent-red); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
-
-    <header>
-        <div class="logo">VoxPopuli Central [ADM]</div>
-        <button class="btn-sair" onclick="deslogar()">Sair</button>
-    </header>
-
-    <div style="max-width: 900px; margin: 0 auto;">
-        
-        <div class="secao-adm">
-            <h3>📝 Injetar Nova Enquete Diária</h3>
-            <div class="form-row">
-                <input type="text" id="enq-pergunta" placeholder="Pergunta da enquete">
-                <input type="text" id="enq-op1" placeholder="Opção 1">
-                <input type="text" id="enq-op2" placeholder="Opção 2">
-            </div>
-            <button class="btn-adm" onclick="injetarEnquete()">Injetar Enquete na Nuvem</button>
-        </div>
-
-        <div class="secao-adm" style="border-color: var(--primary-blue);">
-            <h3 style="color: #60a5fa;">🎲 Encerramento e Apuração Matemática</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Pergunta</th>
-                        <th>Opções Registradas</th>
-                        <th>Definir Resposta Certa (Pagar Lucros)</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-enquetes"></tbody>
-            </table>
-        </div>
-
-    </div>
-
-    <script>
-        const SUPABASE_URL = "https://xxxzluqjgqwkpzjjxpbj.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHpsdXFqZ3F3a3B6amp4cGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MTA2NjcsImV4cCI6MjA5ODE4NjY2N30.VzGPY5L8EhKt7-ARJaShpM6mMl8kA2tlRG_S4dtUPzc";
-        
-        const clientSupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        function deslogar() {
-            localStorage.removeItem('vox_usuario');
-            window.location.href = 'index.html';
-        }
-
-        async function carregarAdmin() {
-            try {
-                const { data: enquetes } = await clientSupabase.from('enquetes').select('*');
-                const tabela = document.getElementById('tabela-enquetes');
-                tabela.innerHTML = "";
-
-                if(!enquetes || enquetes.length === 0) {
-                    tabela.innerHTML = "<tr><td colspan='3' style='text-align:center; color:gray;'>Nenhuma enquete aberta para apuração.</td></tr>";
-                    return;
-                }
-
-                enquetes.forEach(enq => {
-                    let o1 = "Opção 1", o2 = "Opção 2";
-                    let perguntaExibida = enq.pergunta;
-
-                    if (enq.pergunta.includes("[") && enq.pergunta.includes("vs")) {
-                        try {
-                            const partes = enq.pergunta.split(" [");
-                            perguntaExibida = partes[0];
-                            const opcoesRaw = partes[1].replace("]", "").split(" vs ");
-                            o1 = opcoesRaw[0]; o2 = opcoesRaw[1];
-                        } catch(e){}
-                    }
-
-                    tabela.innerHTML += `
-                        <tr>
-                            <td><b>${perguntaExibida}</b></td>
-                            <td>1: ${o1} <br> 2: ${o2}</td>
-                            <td>
-                                <button class="btn-resolver" onclick="apurarEnquete('${enq.id}', '1')">Opção 1 Certa</button>
-                                <button class="btn-resolver" onclick="apurarEnquete('${enq.id}', '2')" style="background:#3b82f6;">Opção 2 Certa</button>
-                                <button class="btn-del" onclick="deletarEnquete('${enq.id}')">Excluir</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } catch(e) { console.error(e); }
-        }
-
-        async function injetarEnquete() {
-            const p = document.getElementById('enq-pergunta').value.trim();
-            const o1 = document.getElementById('enq-op1').value.trim();
-            const o2 = document.getElementById('enq-op2').value.trim();
-
-            if(!p || !o1 || !o2) { alert("Preencha todos os campos!"); return; }
-
-            const { error } = await clientSupabase.from('enquetes').insert([{ pergunta: `${p} [${o1} vs ${o2}]` }]);
-            
-            if(error) { alert("Erro ao salvar: " + error.message); return; }
-
-            alert("Enquete injetada com sucesso!");
-            document.getElementById('enq-pergunta').value = "";
-            document.getElementById('enq-op1').value = "";
-            document.getElementById('enq-op2').value = "";
-            carregarAdmin();
-        }
-
-        async function apurarEnquete(enqueteId, opcaoVencedora) {
+async function apurarEnquete(enqueteId, opcaoVencedora) {
             try {
                 // 1. Busca todas as apostas feitas nesta enquete específica na nuvem
                 const { data: apostas, error: errApostas } = await clientSupabase
@@ -154,10 +17,12 @@
                         const valorTotal = parseFloat(aposta.valor_total);
                         let retornoCalculado = 0;
 
-                        // Aplica a lógica matemática: Lucro de 1.49x se acertar ou 0.39x mitigado se errar
-                        if (aposta.opcao_chosen === opcaoVencedora || aposta.opcao_escolhida === opcaoVencedora) {
+                        // CORREÇÃO AQUI: Verifica corretamente a coluna 'opcao_escolhida'
+                        if (aposta.opcao_escolhida === opcaoVencedora.toString()) {
+                            // Se o membro ganhou: Devolve o valor apostado + Lucro de 49% (Total: 1.49x)
                             retornoCalculado = valorTotal * 1.49;
                         } else {
+                            // Se o membro perdeu: Mitiga o dano e devolve apenas 39% do valor apostado
                             retornoCalculado = valorTotal * 0.39;
                         }
 
@@ -169,7 +34,9 @@
                             .maybeSingle();
 
                         if (m) {
+                            // Soma o retorno calculado diretamente ao saldo atual do membro na nuvem
                             const novoSaldo = parseFloat(m.saldo) + retornoCalculado;
+                            
                             // Atualiza o saldo na nuvem
                             await clientSupabase
                                 .from('membros')
@@ -193,16 +60,3 @@
                 alert("Erro durante a apuração.");
             }
         }
-
-        async function deletarEnquete(id) {
-            if(confirm("Deseja realmente excluir esta enquete sem pagar ninguém?")) {
-                await clientSupabase.from('historico_apostas').delete().eq('enquete_id', id.toString());
-                await clientSupabase.from('enquetes').delete().eq('id', id);
-                carregarAdmin();
-            }
-        }
-
-        carregarAdmin();
-    </script>
-</body>
-</html>
