@@ -52,13 +52,13 @@
         </div>
 
         <div class="secao-adm" style="border-color: var(--primary-blue);">
-            <h3 style="color: #60a5fa;">🎲 Encerramento e Apuração do Dia</h3>
+            <h3 style="color: #60a5fa;">🎲 Encerramento e Apuração Matemática</h3>
             <table>
                 <thead>
                     <tr>
                         <th>Pergunta</th>
                         <th>Opções Registradas</th>
-                        <th>Definir Resposta Certa (Pagar Membros)</th>
+                        <th>Definir Resposta Certa (Pagar Lucros)</th>
                     </tr>
                 </thead>
                 <tbody id="tabela-enquetes"></tbody>
@@ -107,8 +107,8 @@
                             <td><b>${perguntaExibida}</b></td>
                             <td>1: ${o1} <br> 2: ${o2}</td>
                             <td>
-                                <button class="btn-resolver" onclick="encerrarComVencedor('${enq.id}', '1')">Opção 1 Certa</button>
-                                <button class="btn-resolver" onclick="encerrarComVencedor('${enq.id}', '2')" style="background:#3b82f6;">Opção 2 Certa</button>
+                                <button class="btn-resolver" onclick="pagarMembros('${enq.id}', '1')">Opção 1 Certa</button>
+                                <button class="btn-resolver" onclick="pagarMembros('${enq.id}', '2')" style="background:#3b82f6;">Opção 2 Certa</button>
                                 <button class="btn-del" onclick="deletarEnquete('${enq.id}')">Excluir</button>
                             </td>
                         </tr>
@@ -124,55 +124,42 @@
 
             if(!p || !o1 || !o2) { alert("Preencha todos os campos!"); return; }
 
+            // CORREÇÃO AQUI: Salva tudo estruturado apenas na coluna 'pergunta' existente
             const { error } = await clientSupabase.from('enquetes').insert([{ pergunta: `${p} [${o1} vs ${o2}]` }]);
             
-            if(error) { alert("Erro: " + error.message); return; }
+            if(error) { alert("Erro ao salvar: " + error.message); return; }
 
-            alert("Enquete injetada!");
+            alert("Enquete injetada com sucesso!");
             document.getElementById('enq-pergunta').value = "";
             document.getElementById('enq-op1').value = "";
             document.getElementById('enq-op2').value = "";
             carregarAdmin();
         }
 
-        async function encerrarComVencedor(enqueteId, opcaoVencedora) {
-            if(!confirm("Confirma a apuração desta resposta certa? Os saldos serão recalculados agora.")) return;
+        async function pagarMembros(enqueteId, opcaoVencedora) {
+            let apostasLocais = JSON.parse(localStorage.getItem('minhas_apostas') || '{}');
+            const aposta = apostasLocais[enqueteId];
 
-            try {
-                // Busca todas as apostas feitas nesta enquete
-                const { data: apostas } = await clientSupabase.from('historico_apostas').select('*').eq('enquete_id', enqueteId);
+            if(aposta) {
+                const valorTotal = parseFloat(aposta.valor);
+                let retorno = 0;
 
-                if(apostas && apostas.length > 0) {
-                    for(let aposta of apostas) {
-                        const valorTotal = parseFloat(aposta.valor_total);
-                        let valorRetorno = 0;
-
-                        if (aposta.opcao_escolhida == opcaoVencedora) {
-                            // ACERTOU: Ganha 1.49 por moeda investida (0.19 centavos de lucro puro)
-                            valorRetorno = valorTotal * 1.49;
-                        } else {
-                            // ERROU: Ganha 0.39 por moeda investida (0.61 centavos de perda do valor total)
-                            valorRetorno = valorTotal * 0.39;
-                        }
-
-                        // Busca o saldo atual do membro
-                        const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', aposta.membro_id).maybeSingle();
-                        if(m) {
-                            const novoSaldo = parseFloat(m.saldo) + valorRetorno;
-                            // Devolve os rendimentos calculados para o saldo do membro
-                            await clientSupabase.from('membros').update({ saldo: novoSaldo }).eq('id', aposta.membro_id);
-                        }
-                    }
+                if(aposta.opcao == opcaoVencedora) {
+                    retorno = valorTotal * 1.49; // Lucro de 0.19 por real
+                } else {
+                    retorno = valorTotal * 0.39; // Retorno de 30% mitigado
                 }
 
-                // Deleta a enquete finalizada para tirá-la do painel
-                await clientSupabase.from('enquetes').delete().eq('id', enqueteId);
-                alert("Apuração diária concluída e saldos atualizados com sucesso!");
-                carregarAdmin();
-
-            } catch(err) {
-                alert("Erro na apuração: " + err.message);
+                const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', aposta.usuario).maybeSingle();
+                if(m) {
+                    const novoSaldo = parseFloat(m.saldo) + retorno;
+                    await clientSupabase.from('membros').update({ saldo: novoSaldo }).eq('id', aposta.usuario);
+                }
             }
+
+            await clientSupabase.from('enquetes').delete().eq('id', enqueteId);
+            alert("Saldos calculados seguindo a regra matemática e enquete finalizada!");
+            carregarAdmin();
         }
 
         async function deletarEnquete(id) {
