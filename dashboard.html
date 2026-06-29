@@ -24,6 +24,11 @@
         .btn-acao { padding: 8px 14px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; color: white; }
         .btn-analise { background: #6b7280; margin-right: 10px; }
         .btn-sair { background: #374151; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-left: 15px; }
+        
+        /* Estilos do Modal do PIX */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: #1f2937; padding: 25px; border-radius: 12px; max-width: 450px; width: 100%; border: 1px solid var(--border); text-align: center; }
+        .pix-box { background: #111827; padding: 12px; border-radius: 6px; word-break: break-all; margin: 15px 0; font-family: monospace; color: #9ca3af; font-size: 13px; border: 1px solid var(--border); text-align: left; max-height: 100px; overflow-y: auto; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -33,7 +38,7 @@
     <div class="logo">VoxPopuli 📈</div>
     <div>
         Saldo: <b id="txt-saldo" style="color:var(--green)">0.00</b> Moedas 
-        <button onclick="comprarMoedas()" style="margin-left:10px; padding: 4px 8px; cursor:pointer;">+ Recarregar</button>
+        <button onclick="abrirModalRecarga()" style="margin-left:10px; padding: 4px 8px; cursor:pointer; font-weight: bold; border-radius: 4px;">+ Recarregar</button>
         <button class="btn-sair" onclick="deslogar()">Sair</button>
     </div>
 </header>
@@ -45,10 +50,37 @@
     <button class="tab-btn" onclick="filtrar('Conhecimentos Gerais', this)">🧠 Gerais</button>
 </div>
 
-<!-- Essa div vai segurar tanto o cabeçalho dinâmico quanto as linhas dos ativos -->
 <div id="lista-previsoes"></div>
 
+<!-- MODAL INTERATIVO DO PIX COPIA E COLA -->
+<div class="modal" id="modalPix">
+    <div class="modal-content">
+        <h3 style="color: #60a5fa; margin-bottom: 10px;">Pagamento do Pedido</h3>
+        <p style="font-size: 14px; color: #9ca3af;">Transfira o valor exato abaixo para liberar suas moedas:</p>
+        
+        <h2 style="color: var(--green); margin: 15px 0;" id="modalValor">R$ 0,00</h2>
+        
+        <p style="text-align: left; font-size: 12px; font-weight: bold; color: #f3f4f6;">Cópia e Cola do PIX:</p>
+        <div class="pix-box" id="payloadPix">Gerando código...</div>
+        
+        <button class="btn-acao" style="background: var(--blue); width: 100%; margin-bottom: 20px;" onclick="copiarPix()">📋 Copiar Código PIX</button>
+        
+        <div style="border-top: 1px solid var(--border); padding-top: 15px;">
+            <p style="font-size: 13px; color: #e5e7eb; margin-bottom: 12px;">⚠️ Já realizou a transferência no aplicativo do seu banco?</p>
+            <button class="btn-acao" style="background: var(--green); width: 100%;" id="btnConfirmarPagamento">✅ Já enviei o PIX!</button>
+            <button class="btn-acao" style="background: #4b5563; width: 100%; margin-top: 8px;" onclick="fecharModal()">Cancelar Solicitação</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    // ==========================================
+    // CONFIGURAÇÕES DO SEU PIX (ALTERE AQUI)
+    // ==========================================
+    const CHAVE_PIX = "suachavepix@email.com"; // Insira aqui seu e-mail, telefone, CNPJ ou chave aleatória
+    const NOME_TITULAR = "SEU NOME COMPLETO";   // Nome do titular da conta bancária
+    const CIDADE_TITULAR = "ARARUAMA";          // Cidade da conta bancária (sem acentos preferencialmente)
+
     const SUPABASE_URL = "https://xxxzluqjgqwkpzjjxpbj.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHpsdXFqZ3F3a3B6amp4cGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MTA2NjcsImV4cCI6MjA5ODE4NjY2N30.VzGPY5L8EhKt7-ARJaShpM6mMl8kA2tlRG_S4dtUPzc";
     
@@ -57,6 +89,7 @@
     
     let categoriaAtual = "Mercado Financeiro";
     let saldoAtual = 0;
+    let idPedidoAtual = null;
 
     if (!usuarioLogado) { window.location.href = 'index.html'; }
 
@@ -65,16 +98,103 @@
         window.location.href = 'index.html';
     }
 
+    // Função interna simples para gerar a string do PIX estático (Padrão EMV Co-branded BR Code)
+    function gerarPayloadPixEstatico(chave, nome, cidade, valor) {
+        function emv(id, valor) { return id + String(valor.length).padStart(2, '0') + valor; }
+        function crc16(str) {
+            let crc = 0xFFFF;
+            for (let c = 0; c < str.length; c++) {
+                crc ^= str.charCodeAt(c) << 8;
+                for (let i = 0; i < 8; i++) {
+                    if (crc & 0x8000) crc = (crc << 1) ^ 0x1021;
+                    else crc <<= 1;
+                }
+            }
+            return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+        }
+        
+        let txtValor = valor.toFixed(2);
+        let infoAdicional = emv('00', 'BR.GOV.BCB.PIX') + emv('01', chave);
+        
+        let payload = emv('00', '01') +
+                      emv('26', infoAdicional) +
+                      emv('52', '0000') +
+                      emv('53', '986') +
+                      emv('54', txtValor) +
+                      emv('58', 'BR') +
+                      emv('59', nome.substring(0, 25)) +
+                      emv('60', cidade.substring(0, 15)) +
+                      emv('62', emv('05', 'VOXRECARGA'));
+        
+        return payload + '6304' + crc16(payload + '6304');
+    }
+
+    async function abrirModalRecarga() {
+        const quantidade = prompt("Quantas moedas deseja recarregar?\n(Mínimo de 9 moedas = R$ 9,00)");
+        const qtdNum = parseFloat(quantidade);
+
+        if (isNaN(qtdNum) || qtdNum < 9) {
+            alert("Valor inválido! A recarga mínima é de 9 moedas.");
+            return;
+        }
+
+        // 1. Cria a solicitação no banco com status 'pendente'
+        const { data, error } = await clientSupabase.from('pedidos_recarga').insert([{
+            membro_id: usuarioLogado.toString(),
+            quantidade_moedas: qtdNum,
+            status: 'pendente'
+        }]).select();
+
+        if (error || !data || data.length === 0) { 
+            alert("Erro ao gerar pedido: " + (error ? error.message : "Desconhecido")); 
+            return; 
+        }
+
+        idPedidoAtual = data[0].id; // Armazena o ID retornado pelo Supabase
+
+        // 2. Monta e exibe a interface do Modal Pix
+        document.getElementById('modalValor').innerText = `R$ ${qtdNum.toFixed(2)}`;
+        const stringPix = gerarPayloadPixEstatico(CHAVE_PIX, NOME_TITULAR, CIDADE_TITULAR, qtdNum);
+        document.getElementById('payloadPix').innerText = stringPix;
+        
+        // Configura o clique do botão de confirmação
+        document.getElementById('btnConfirmarPagamento').onclick = async function() {
+            // Atualiza no banco para o ADM saber que foi enviado e aguarda aprovação
+            const { error: errUpdate } = await clientSupabase.from('pedidos_recarga')
+                .update({ status: 'envio_confirmado_usuario' })
+                .eq('id', idPedidoAtual);
+                
+            if(errUpdate) {
+                alert("Erro ao enviar confirmação: " + errUpdate.message);
+            } else {
+                alert("Notificação enviada com sucesso! O administrador foi avisado e vai liberar o seu saldo em instantes.");
+                fecharModal();
+            }
+        };
+
+        document.getElementById('modalPix').style.display = 'flex';
+    }
+
+    function fecharModal() {
+        document.getElementById('modalPix').style.display = 'none';
+        idPedidoAtual = null;
+    }
+
+    function copiarPix() {
+        const txt = document.getElementById('payloadPix').innerText;
+        navigator.clipboard.writeText(txt);
+        alert("Código PIX Copia e Cola copiado para a área de transferência!");
+    }
+
+    // --- Restante das Funções Originais de Carregamento de Dados e Filtros ---
     async function carregarDados() {
         try {
-            // Busca o saldo do usuário
             const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', usuarioLogado).maybeSingle();
             if (m) {
                 saldoAtual = parseFloat(m.saldo);
                 document.getElementById('txt-saldo').innerText = saldoAtual.toFixed(2);
             }
 
-            // Busca as enquetes filtradas por categoria
             const { data: enq } = await clientSupabase.from('enquetes').select('*').eq('categoria', categoriaAtual);
             const lista = document.getElementById('lista-previsoes');
             lista.innerHTML = "";
@@ -84,22 +204,20 @@
                 return;
             }
 
-            // Injeta a pergunta fixa explicativa se for Mercado Financeiro
             if (categoriaAtual === "Mercado Financeiro") {
                 lista.innerHTML += `
                     <div style="background: rgba(37, 99, 235, 0.1); border: 1px dashed var(--blue); padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
                         <h4 style="color: #60a5fa; margin: 0; font-size: 16px; letter-spacing: 0.5px;">
                             🎯 PREVISÃO DIÁRIA: Hoje o ativo fecha ACIMA ou ABAIXO do preço de ontem?
                         </h4>
-                    </div>
-                `;
+                    </div>`;
             }
 
             enq.forEach(e => {
                 if (categoriaAtual === "Mercado Financeiro") {
                     const parts = e.pergunta.split(' [');
                     const ativo = parts[0];
-                    const info = parts[1].replace(']', '').split(' vs '); // info[0]=preço de ontem, info[1]=ACIMA, info[2]=ABAIXO
+                    const info = parts[1].replace(']', '').split(' vs ');
                     
                     lista.innerHTML += `
                         <div class="ativo-card">
@@ -113,7 +231,6 @@
                 } else {
                     let o1 = "Opção 1", o2 = "Opção 2";
                     let perguntaExibida = e.pergunta;
-                    
                     if (e.pergunta.includes("[") && e.pergunta.includes("vs")) {
                         try {
                             const partes = e.pergunta.split(" [");
@@ -122,7 +239,6 @@
                             o1 = opcoesRaw[0]; o2 = opcoesRaw[1];
                         } catch(err){}
                     }
-                    
                     lista.innerHTML += `
                         <div class="ativo-card" style="flex-direction: column; align-items: flex-start; gap: 15px;">
                             <b>${perguntaExibida}</b>
@@ -146,46 +262,19 @@
     async function apostar(id, op, nomeOpcao) {
         const qInput = prompt(`Quantas moedas deseja injetar em "${nomeOpcao}"?`);
         if(!qInput) return;
-        
         const q = parseFloat(qInput);
         if(isNaN(q) || q <= 0) { alert("Valor de moedas inválido!"); return; }
-        if(q > saldoAtual) { alert("Saldo insuficiente para realizar essa operação!"); return; }
+        if(q > saldoAtual) { alert("Saldo insuficiente!"); return; }
 
         const { error: errAposta } = await clientSupabase.from('historico_apostas').insert([{
-            membro_id: usuarioLogado, 
-            enquete_id: id.toString(), 
-            opcao_escolhida: op.toString(), 
-            valor_total: q
+            membro_id: usuarioLogado, enquete_id: id.toString(), opcao_escolhida: op.toString(), valor_total: q
         }]);
-
         if(errAposta) { alert("Erro ao salvar operação: " + errAposta.message); return; }
 
         const novoSaldo = saldoAtual - q;
-        const { error: errSaldo } = await clientSupabase.from('membros').update({ saldo: novoSaldo }).eq('id', usuarioLogado);
-
-        if(errSaldo) { alert("Erro ao deduzir moedas: " + errSaldo.message); return; }
-
-        alert(`Operação realizada com sucesso!\n${q} moedas foram deduzidas da sua conta.`);
+        await clientSupabase.from('membros').update({ saldo: novoSaldo }).eq('id', usuarioLogado);
+        alert(`Operação realizada!\n${q} moedas deduzidas.`);
         carregarDados();
-    }
-
-    async function comprarMoedas() {
-        const quantidade = prompt("Quantas moedas deseja recarregar?\n(Mínimo de 9 moedas = R$ 9,00)");
-        const qtdNum = parseFloat(quantidade);
-
-        if (isNaN(qtdNum) || qtdNum < 9) {
-            alert("Valor inválido! A recarga mínima é de 9 moedas.");
-            return;
-        }
-
-        const { error } = await clientSupabase.from('pedidos_recarga').insert([{
-            membro_id: usuarioLogado.toString(),
-            quantidade_moedas: qtdNum,
-            status: 'pendente'
-        }]);
-
-        if (error) { alert("Erro ao gerar pedido: " + error.message); return; }
-        alert(`Solicitação de ${qtdNum} moedas enviada ao Administrador!`);
     }
 
     carregarDados();
