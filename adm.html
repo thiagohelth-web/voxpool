@@ -42,6 +42,7 @@
 
     <div style="max-width: 1000px; margin: 0 auto;">
         
+        <!-- Aprovação de Recargas -->
         <div class="secao-adm" style="border-color: var(--accent-green);">
             <h3 style="color: var(--accent-green);">💰 Aprovação de Recargas (Mín. 9 Moedas)</h3>
             <table>
@@ -57,6 +58,7 @@
             </table>
         </div>
         
+        <!-- Formulário Inteligente de Nova Enquete -->
         <div class="secao-adm">
             <h3>📝 Injetar Nova Previsão por Categoria</h3>
             <div class="form-row">
@@ -68,14 +70,30 @@
                 </select>
             </div>
             
+            <!-- Campos Dinâmicos (Ativos selecionáveis vs Texto Livre) -->
             <div class="form-row" id="campos-dinamicos">
-                <input type="text" id="enq-ativo" placeholder="Ex: GOLD, BTC/USD, KLBN11, S&P 500">
-                <input type="text" id="enq-fechamento" placeholder="Preço de Fechamento de Ontem (f: X)">
+                <!-- Inicializa montado com a lista de Mercado Financeiro -->
+                <select id="enq-ativo">
+                    <option value="" disabled selected>Escolha o Ativo Comercial...</option>
+                    <option value="GOLD">🏆 FOREX: GOLD (Ouro)</option>
+                    <option value="EURUSD">💱 FOREX: EUR/USD</option>
+                    <option value="GBPUSD">💱 FOREX: GBP/USD</option>
+                    <option value="BTCUSD">🪙 CRIPTO: BITCOIN (BTC/USD)</option>
+                    <option value="ETHUSD">🪙 CRIPTO: ETHEREUM (ETH/USD)</option>
+                    <option value="SOLUSD">🪙 CRIPTO: SOLANA (SOL/USD)</option>
+                    <option value="KLBN11">📊 B3 AÇÃO: KLABIN (KLBN11)</option>
+                    <option value="PETR4">📊 B3 AÇÃO: PETROBRAS (PETR4)</option>
+                    <option value="VALE3">📊 B3 AÇÃO: VALE (VALE3)</option>
+                    <option value="ITUB4">📊 B3 AÇÃO: ITAÚ (ITUB4)</option>
+                    <option value="SPX">🇺🇸 ÍNDICE: S&P 500</option>
+                </select>
+                <input type="text" id="enq-fechamento" placeholder="Preço de Fechamento de Ontem (Ex: 1.08500)">
             </div>
             
             <button class="btn-adm" onclick="injetarEnquete()">Injetar na Categoria Selecionada</button>
         </div>
 
+        <!-- Tabela de Apuração -->
         <div class="secao-adm" style="border-color: var(--primary-blue);">
             <h3 style="color: #60a5fa;">🎲 Encerramento e Apuração Matemática</h3>
             <table>
@@ -110,8 +128,21 @@
             
             if (cat === "Mercado Financeiro") {
                 container.innerHTML = `
-                    <input type="text" id="enq-ativo" placeholder="Ex: GOLD, BTC/USD, KLBN11, S&P 500">
-                    <input type="text" id="enq-fechamento" placeholder="Preço de Fechamento de Ontem (f: X)">
+                    <select id="enq-ativo">
+                        <option value="" disabled selected>Escolha o Ativo Comercial...</option>
+                        <option value="GOLD">🏆 FOREX: GOLD (Ouro)</option>
+                        <option value="EURUSD">💱 FOREX: EUR/USD</option>
+                        <option value="GBPUSD">💱 FOREX: GBP/USD</option>
+                        <option value="BTCUSD">🪙 CRIPTO: BITCOIN (BTC/USD)</option>
+                        <option value="ETHUSD">🪙 CRIPTO: ETHEREUM (ETH/USD)</option>
+                        <option value="SOLUSD">🪙 CRIPTO: SOLANA (SOL/USD)</option>
+                        <option value="KLBN11">📊 B3 AÇÃO: KLABIN (KLBN11)</option>
+                        <option value="PETR4">📊 B3 AÇÃO: PETROBRAS (PETR4)</option>
+                        <option value="VALE3">📊 B3 AÇÃO: VALE (VALE3)</option>
+                        <option value="ITUB4">📊 B3 AÇÃO: ITAÚ (ITUB4)</option>
+                        <option value="SPX">🇺🇸 ÍNDICE: S&P 500</option>
+                    </select>
+                    <input type="text" id="enq-fechamento" placeholder="Preço de Fechamento de Ontem (Ex: 1.08500)">
                 `;
             } else {
                 container.innerHTML = `
@@ -150,12 +181,12 @@
                 enquetes.forEach(enq => {
                     const categoria = enq.categoria || "Mercado Financeiro";
                     let o1 = "Opção 1", o2 = "Opção 2";
-                    let exibição = enq.pergunta;
+                    let exibicao = enq.pergunta;
 
                     if (enq.pergunta.includes("[") && enq.pergunta.includes("vs")) {
                         try {
                             const partes = enq.pergunta.split(" [");
-                            exibição = partes[0];
+                            exibicao = partes[0];
                             const opcoesRaw = partes[1].replace("]", "").split(" vs ");
                             o1 = opcoesRaw[0]; o2 = opcoesRaw[1];
                         } catch(e){}
@@ -164,7 +195,7 @@
                     tabela.innerHTML += `
                         <tr>
                             <td><span class="badge">${categoria}</span></td>
-                            <td><b>${exibição}</b></td>
+                            <td><b>${exibicao}</b></td>
                             <td>1: ${o1} <br> 2: ${o2}</td>
                             <td>
                                 <button class="btn-resolver" onclick="apurarEnquete('${enq.id}', '1')">${o1} Ganhou</button>
@@ -182,21 +213,25 @@
             let perguntaFinal = "";
 
             if (categoria === "Mercado Financeiro") {
-                const ativo = document.getElementById('enq-ativo').value.trim();
+                const ativoSelect = document.getElementById('enq-ativo');
+                const ativo = ativoSelect.value;
                 const fechamento = document.getElementById('enq-fechamento').value.trim();
-                if(!ativo || !fechamento) { alert("Preencha o Ativo e o Fechamento!"); return; }
-                // Estrutura interna combinada padrão: Nome do Ativo [f: Preço vs ACIMA vs ABAIXO]
+                
+                if(!ativo) { alert("Por favor, selecione um ativo da lista!"); return; }
+                if(!fechamento) { alert("Preencha o preço de fechamento!"); return; }
+                
+                // Monta o padrão correto interpretado pelo dashboard do membro
                 perguntaFinal = `${ativo} [f: ${fechamento} vs ACIMA vs ABAIXO]`;
             } else {
                 const p = document.getElementById('enq-pergunta').value.trim();
                 const o1 = document.getElementById('enq-op1').value.trim();
                 const o2 = document.getElementById('enq-op2').value.trim();
-                if(!p || !o1 || !o2) { alert("Preencha todos os campos!"); return; }
+                if(!p || !o1 || !o2) { alert("Preencha todos os campos da pergunta!"); return; }
                 perguntaFinal = `${p} [${o1} vs ${o2}]`;
             }
 
             const { error } = await clientSupabase.from('enquetes').insert([{ pergunta: perguntaFinal, categoria: categoria }]);
-            if(error) { alert("Erro ao salvar: " + error.message); return; }
+            if(error) { alert("Erro ao salvar no banco: " + error.message); return; }
 
             alert("Previsão injetada com sucesso!");
             ajustarFormulario();
@@ -213,7 +248,7 @@
         }
 
         async function rejeitarRecarga(pedidoId) {
-            if (confirm("Recusar pedido?")) {
+            if (confirm("Recusar pedido de crédito?")) {
                 await clientSupabase.from('pedidos_recarga').delete().eq('id', pedidoId);
                 carregarAdmin();
             }
@@ -234,13 +269,13 @@
                     await clientSupabase.from('historico_apostas').delete().eq('enquete_id', enqueteId.toString());
                 }
                 await clientSupabase.from('enquetes').delete().eq('id', enqueteId);
-                alert("Apuração concluída e saldos pagos!");
+                alert("Apuração concluída! Prêmios e mitigações distribuídos com sucesso.");
                 carregarAdmin();
             } catch (err) { console.error(err); }
         }
 
         async function deletarEnquete(id) {
-            if(confirm("Excluir previsão?")) {
+            if(confirm("Deseja realmente excluir essa previsão permanentemente?")) {
                 await clientSupabase.from('historico_apostas').delete().eq('enquete_id', id.toString());
                 await clientSupabase.from('enquetes').delete().eq('id', id);
                 carregarAdmin();
