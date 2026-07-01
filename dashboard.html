@@ -1,7 +1,7 @@
 async function solicitarSaque() {
     const inputValor = document.getElementById('input-valor-saque');
     const inputPix = document.getElementById('input-pix-saque');
-    
+
     if (!inputValor || !inputPix) {
         alert("Erro no formulário: Campos não encontrados.");
         return;
@@ -9,6 +9,7 @@ async function solicitarSaque() {
 
     const valorSaque = parseFloat(inputValor.value);
     const pix = inputPix.value;
+    // Garante que o ID é uma string limpa
     const usuarioId = String(localStorage.getItem('vox_usuario')).trim();
 
     if (!valorSaque || isNaN(valorSaque) || valorSaque <= 0) {
@@ -17,6 +18,7 @@ async function solicitarSaque() {
     }
 
     try {
+        // 1. Busca saldo atual do membro
         const { data: membro, error: fetchError } = await clientSupabase
             .from('membros')
             .select('id, saldo')
@@ -29,7 +31,8 @@ async function solicitarSaque() {
         }
 
         const saldoAtual = parseFloat(membro.saldo || 0);
-        
+
+        // 2. Valida saldo
         if (saldoAtual < valorSaque) {
             alert("Saldo insuficiente.");
             return;
@@ -37,6 +40,7 @@ async function solicitarSaque() {
 
         const novoSaldo = saldoAtual - valorSaque;
 
+        // 3. Regista o pedido
         const { error: insertError } = await clientSupabase
             .from('saques')
             .insert([{ 
@@ -48,6 +52,7 @@ async function solicitarSaque() {
 
         if (insertError) throw insertError;
 
+        // 4. Deduz o saldo imediatamente
         const { error: updateError } = await clientSupabase
             .from('membros')
             .update({ saldo: novoSaldo })
@@ -55,7 +60,7 @@ async function solicitarSaque() {
 
         if (updateError) throw updateError;
 
-        alert("Sucesso! Saque solicitado.");
+        alert("Sucesso! Saque solicitado e saldo atualizado.");
         location.reload();
 
     } catch (err) {
