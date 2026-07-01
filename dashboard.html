@@ -6,13 +6,12 @@
 </head>
 <body>
     <script>
-        // Função corrigida e completa
         async function solicitarSaque() {
             const inputValor = document.getElementById('input-valor-saque');
             const inputPix = document.getElementById('input-pix-saque');
-            
+
             if (!inputValor || !inputPix) {
-                alert("Erro: Campos de saque não encontrados na página.");
+                alert("Erro: Campos de saque não encontrados.");
                 return;
             }
 
@@ -26,7 +25,6 @@
             }
 
             try {
-                // 1. Busca dados
                 const { data: membro, error: fetchError } = await clientSupabase
                     .from('membros')
                     .select('id, saldo')
@@ -40,7 +38,6 @@
 
                 const saldoAtual = parseFloat(membro.saldo || 0);
 
-                // 2. Valida saldo
                 if (saldoAtual < valorSaque) {
                     alert("Saldo insuficiente.");
                     return;
@@ -48,7 +45,6 @@
 
                 const novoSaldo = saldoAtual - valorSaque;
 
-                // 3. Registra saque
                 const { error: insertError } = await clientSupabase
                     .from('saques')
                     .insert([{ 
@@ -60,7 +56,6 @@
 
                 if (insertError) throw insertError;
 
-                // 4. Atualiza saldo
                 const { error: updateError } = await clientSupabase
                     .from('membros')
                     .update({ saldo: novoSaldo })
@@ -72,7 +67,7 @@
                 location.reload();
 
             } catch (err) {
-                alert("Ocorreu um erro técnico ao processar o saque.");
+                alert("Ocorreu um erro técnico ao processar.");
             }
         }
     </script>
