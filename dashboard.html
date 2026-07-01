@@ -1,65 +1,80 @@
-async function solicitarSaque() {
-    const inputValor = document.getElementById('input-valor-saque');
-    const inputPix = document.getElementById('input-pix-saque');
-    
-    if (!inputValor || !inputPix) {
-        alert("Erro no formulário: Campos não encontrados.");
-        return;
-    }
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel do Membro</title>
+</head>
+<body>
+    <script>
+        // Função corrigida e completa
+        async function solicitarSaque() {
+            const inputValor = document.getElementById('input-valor-saque');
+            const inputPix = document.getElementById('input-pix-saque');
+            
+            if (!inputValor || !inputPix) {
+                alert("Erro: Campos de saque não encontrados na página.");
+                return;
+            }
 
-    const valorSaque = parseFloat(inputValor.value);
-    const pix = inputPix.value;
-    const usuarioId = String(localStorage.getItem('vox_usuario')).trim();
+            const valorSaque = parseFloat(inputValor.value);
+            const pix = inputPix.value;
+            const usuarioId = String(localStorage.getItem('vox_usuario')).trim();
 
-    if (!valorSaque || isNaN(valorSaque) || valorSaque <= 0) {
-        alert("Valor inválido.");
-        return;
-    }
+            if (!valorSaque || isNaN(valorSaque) || valorSaque <= 0) {
+                alert("Valor inválido.");
+                return;
+            }
 
-    try {
-        const { data: membro, error: fetchError } = await clientSupabase
-            .from('membros')
-            .select('id, saldo')
-            .eq('id', usuarioId)
-            .maybeSingle();
+            try {
+                // 1. Busca dados
+                const { data: membro, error: fetchError } = await clientSupabase
+                    .from('membros')
+                    .select('id, saldo')
+                    .eq('id', usuarioId)
+                    .maybeSingle();
 
-        if (fetchError || !membro) {
-            alert("Erro: Usuário não localizado.");
-            return;
+                if (fetchError || !membro) {
+                    alert("Erro: Usuário não localizado.");
+                    return;
+                }
+
+                const saldoAtual = parseFloat(membro.saldo || 0);
+
+                // 2. Valida saldo
+                if (saldoAtual < valorSaque) {
+                    alert("Saldo insuficiente.");
+                    return;
+                }
+
+                const novoSaldo = saldoAtual - valorSaque;
+
+                // 3. Registra saque
+                const { error: insertError } = await clientSupabase
+                    .from('saques')
+                    .insert([{ 
+                        membro_id: usuarioId, 
+                        moedas_sacar: valorSaque, 
+                        chave_pix: pix, 
+                        status: 'PENDENTE' 
+                    }]);
+
+                if (insertError) throw insertError;
+
+                // 4. Atualiza saldo
+                const { error: updateError } = await clientSupabase
+                    .from('membros')
+                    .update({ saldo: novoSaldo })
+                    .eq('id', usuarioId);
+
+                if (updateError) throw updateError;
+
+                alert("Sucesso! Saque solicitado.");
+                location.reload();
+
+            } catch (err) {
+                alert("Ocorreu um erro técnico ao processar o saque.");
+            }
         }
-
-        const saldoAtual = parseFloat(membro.saldo || 0);
-
-        if (saldoAtual < valorSaque) {
-            alert("Saldo insuficiente.");
-            return;
-        }
-
-        const novoSaldo = saldoAtual - valorSaque;
-
-        const { error: insertError } = await clientSupabase
-            .from('saques')
-            .insert([{ 
-                membro_id: usuarioId, 
-                moedas_sacar: valorSaque, 
-                chave_pix: pix, 
-                status: 'PENDENTE' 
-            }]);
-
-        if (insertError) throw insertError;
-
-        const { error: updateError } = await clientSupabase
-            .from('membros')
-            .update({ saldo: novoSaldo })
-            .eq('id', usuarioId);
-
-        if (updateError) throw updateError;
-
-        alert("Sucesso! Saque solicitado.");
-        location.reload();
-
-    } catch (err) {
-        console.error("Erro técnico:", err);
-        alert("Ocorreu um erro técnico.");
-    }
-}
+    </script>
+</body>
+</html>
