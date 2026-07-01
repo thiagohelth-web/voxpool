@@ -77,25 +77,28 @@
             <div class="form-row">
                 <select id="enq-categoria" onchange="ajustarFormulario()">
                     <option value="Mercado Financeiro">📈 Mercado Financeiro</option>
-                    <option value="Política">🏛️ Política</option>
                     <option value="Esporte">⚽ Esporte</option>
-                    <option value="Conhecimentos Gerais">🧠 Conhecimentos Gerais</option>
                 </select>
             </div>
             <div class="form-row" id="campos-dinamicos">
                 <select id="enq-ativo">
                     <option value="" disabled selected>Escolha o Ativo...</option>
+                    <option value="WIN1!">📉 Índice WIN (Ibovespa)</option>
+                    <option value="WDO1!">💵 Dólar WDO</option>
+                    <option value="BTCUSD">🪙 BITCOIN (Cripto)</option>
                     <option value="GOLD">🏆 GOLD (Ouro)</option>
-                    <option value="BTCUSD">🪙 BITCOIN</option>
-                    <option value="EURUSD">💱 EUR/USD</option>
+                    <option value="EURUSD">💱 EUR/USD (Forex)</option>
+                    <option value="MXRF11">🏢 MXRF11 (FII)</option>
+                    <option value="HGLG11">🏢 HGLG11 (FII)</option>
+                    <option value="XPML11">🏢 XPML11 (FII)</option>
                 </select>
-                <input type="text" id="enq-fechamento" placeholder="Preço de Ontem (Ex: 1.0850)">
+                <input type="text" id="enq-fechamento" placeholder="Preço de Ontem (Ex: 125300)">
             </div>
             <button class="btn-adm" onclick="injetarEnquete()">Injetar Previsão</button>
         </div>
 
         <div class="secao-adm" style="border-color: var(--primary-blue);">
-            <h3 style="color: #60a5fa;">🎲 Encerramento e Apuração</h3>
+            <h3 style="color: #60a5fa;">🎲 Encerramento e Apuração (Sistema de Rateio)</h3>
             <table>
                 <thead>
                     <tr>
@@ -136,7 +139,7 @@
 
         async function carregarAdmin() {
             try {
-                // 1. LISTAR RECARGAS/DEPOSITOS
+                // 1. LISTAR RECARGAS
                 const { data: recargas } = await clientSupabase.from('pedidos_recarga').select('*').neq('status', 'aprovado');
                 const tRecargas = document.getElementById('tabela-recargas');
                 tRecargas.innerHTML = "";
@@ -175,7 +178,7 @@
                     });
                 }
 
-                // 3. GERENCIADOR DE MEMBROS COMPLETO (RODAPÉ)
+                // 3. GERENCIADOR DE MEMBROS COMPLETO
                 const { data: membros } = await clientSupabase.from('membros').select('*');
                 const tMembros = document.getElementById('tabela-membros-geral');
                 tMembros.innerHTML = "";
@@ -199,7 +202,7 @@
                     });
                 }
 
-                // 4. LISTAR ENQUETES PARA APURAÇÃO (CORRIGIDO PARA MERCADO FINANCEIRO)
+                // 4. LISTAR ENQUETES PARA APURAÇÃO
                 const { data: enquetes } = await clientSupabase.from('enquetes').select('*');
                 const tabela = document.getElementById('tabela-enquetes'); tabela.innerHTML = "";
                 if(enquetes) {
@@ -210,7 +213,6 @@
                             o1 = "ACIMA";
                             o2 = "ABAIXO";
                             try {
-                                // Limpa a exibição tirando a parte do 'vs ACIMA vs ABAIXO' para o ADM ver o preço antigo
                                 if (enq.pergunta.includes(" vs ")) {
                                     ex = enq.pergunta.split(" vs ")[0] + "]";
                                 }
@@ -266,9 +268,8 @@
             if(!novoValor) return;
             const valNum = parseFloat(novoValor);
             if(isNaN(valNum)) { alert("Valor inválido"); return; }
-            
             await clientSupabase.from('membros').update({ saldo: valNum }).eq('id', membroId);
-            alert("Saldo updated manualmente!");
+            alert("Saldo atualizado manualmente!");
             carregarAdmin();
         }
 
@@ -288,7 +289,7 @@
             }
         }
 
-        // --- OUTRAS FUNÇÕES COMPLEMENTARES ---
+        // --- FUNÇÕES COMPLEMENTARES DE RECARGA ---
         async function aprovarRecarga(pId, mId, v) {
             const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', mId).maybeSingle();
             let s = m ? parseFloat(m.saldo) : 0;
@@ -299,14 +300,27 @@
         async function notificarNaoRecebido(id) { await clientSupabase.from('pedidos_recarga').update({ status: 'pix_nao_recebido' }).eq('id', id); carregarAdmin(); }
         async function deletarRecarga(id) { if(confirm("Excluir pedido?")) { await clientSupabase.from('pedidos_recarga').delete().eq('id', id); carregarAdmin(); } }
         
+        // --- FORMULÁRIO DINÂMICO ---
         function ajustarFormulario() {
             const cat = document.getElementById('enq-categoria').value; const container = document.getElementById('campos-dinamicos');
             if (cat === "Mercado Financeiro") {
-                container.innerHTML = `<select id="enq-ativo"><option value="GOLD">🏆 GOLD</option><option value="BTCUSD">🪙 BITCOIN</option><option value="EURUSD">💱 EUR/USD</option></select><input type="text" id="enq-fechamento" placeholder="Preço de Ontem">`;
+                container.innerHTML = `
+                    <select id="enq-ativo">
+                        <option value="WIN1!">📉 Índice WIN (Ibovespa)</option>
+                        <option value="WDO1!">💵 Dólar WDO</option>
+                        <option value="BTCUSD">🪙 BITCOIN (Cripto)</option>
+                        <option value="GOLD">🏆 GOLD (Ouro)</option>
+                        <option value="EURUSD">💱 EUR/USD (Forex)</option>
+                        <option value="MXRF11">🏢 MXRF11 (FII)</option>
+                        <option value="HGLG11">🏢 HGLG11 (FII)</option>
+                        <option value="XPML11">🏢 XPML11 (FII)</option>
+                    </select>
+                    <input type="text" id="enq-fechamento" placeholder="Preço de Ontem">`;
             } else {
-                container.innerHTML = `<input type="text" id="enq-pergunta" placeholder="Pergunta"><input type="text" id="enq-op1" placeholder="Opção 1"><input type="text" id="enq-op2" placeholder="Opção 2">`;
+                container.innerHTML = `<input type="text" id="enq-pergunta" placeholder="Ex: Flamengo vs Vasco (Quem ganha?)"><input type="text" id="enq-op1" placeholder="Time da Casa / Opção 1"><input type="text" id="enq-op2" placeholder="Time Visitante / Opção 2">`;
             }
         }
+
         async function injetarEnquete() {
             const cat = document.getElementById('enq-categoria').value; let pf = "";
             if (cat === "Mercado Financeiro") { pf = `${document.getElementById('enq-ativo').value} [f: ${document.getElementById('enq-fechamento').value} vs ACIMA vs ABAIXO]`; }
@@ -314,18 +328,54 @@
             await clientSupabase.from('enquetes').insert([{ pergunta: pf, categoria: cat }]);
             alert("Previsão injetada!"); carregarAdmin();
         }
+
+        // --- SISTEMA DE APURAÇÃO COM LOGICA DE RATEIO DO POTE (POOL) ---
         async function apurarEnquete(enqueteId, opcaoVencedora) {
+            if(!confirm("Tem certeza que deseja encerrar esta enquete com a opção selecionada? O cálculo do rateio será definitivo.")) return;
+
+            // 1. Coleta todas as apostas feitas nesta enquete específica
             const { data: apostas } = await clientSupabase.from('historico_apostas').select('*').eq('enquete_id', enqueteId.toString());
-            if (apostas) {
-                for (const aposta of apostas) {
-                    let ret = aposta.opcao_escolhida === opcaoVencedora.toString() ? parseFloat(aposta.valor_total) * 1.49 : parseFloat(aposta.valor_total) * 0.39;
-                    const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', aposta.membro_id).maybeSingle();
-                    if (m) await clientSupabase.from('membros').update({ saldo: parseFloat(m.saldo) + ret }).eq('id', aposta.membro_id);
+            
+            if (apostas && apostas.length > 0) {
+                let poteTotal = 0;
+                let volumeVencedores = 0;
+                let apostasVencedoras = [];
+
+                // 2. Calcula o volume total de dinheiro (pote) e filtra quem acertou
+                apostas.forEach(aposta => {
+                    poteTotal += parseFloat(aposta.valor_total);
+                    if (aposta.opcao_escolhida === opcaoVencedora.toString()) {
+                        volumeVencedores += parseFloat(aposta.valor_total);
+                        apostasVencedoras.push(aposta);
+                    }
+                });
+
+                // 3. Se houver vencedores, faz a distribuição proporcional do prêmio acumulado
+                if (volumeVencedores > 0) {
+                    for (const vencedor of apostasVencedoras) {
+                        // Calcula a fatia proporcional do prêmio com base no que ele injetou sozinho
+                        let suaProporcao = parseFloat(vencedor.valor_total) / volumeVencedores;
+                        let premioFinal = suaProporcao * poteTotal;
+
+                        // Busca o saldo atual do membro para somar o prêmio
+                        const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', vencedor.membro_id).maybeSingle();
+                        if (m) {
+                            let novoSaldo = parseFloat(m.saldo) + premioFinal;
+                            await clientSupabase.from('membros').update({ saldo: novoSaldo }).eq('id', vencedor.membro_id);
+                        }
+                    }
+                } else {
+                    alert("Aviso: Ninguém acertou a previsão! O valor acumulado ficou para a plataforma.");
                 }
+
+                // 4. Limpa o histórico de apostas dessa enquete específica do banco
                 await clientSupabase.from('historico_apostas').delete().eq('enquete_id', enqueteId.toString());
             }
+
+            // 5. Deleta a enquete ativa da lista principal
             await clientSupabase.from('enquetes').delete().eq('id', enqueteId);
-            alert("Apuração Concluída!"); carregarAdmin();
+            alert("Apuração Concluída e prêmio rateado com sucesso!"); 
+            carregarAdmin();
         }
 
         setInterval(carregarAdmin, 15000);
