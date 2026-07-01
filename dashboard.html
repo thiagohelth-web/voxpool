@@ -32,6 +32,7 @@
         .btn-opcao.selecionado { background: var(--primary-blue); border-color: #60a5fa; }
         .input-aposta { width: 100%; padding: 10px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: white; margin-bottom: 10px; }
         .btn-confirmar { width: 100%; padding: 12px; background: var(--accent-green); color: black; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .data-enquete { color: #6b7280; font-size: 11px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -46,16 +47,13 @@
     </header>
 
     <div style="max-width: 800px; margin: 0 auto;">
-        <!-- Abas de Navegação -->
         <div class="tabs">
             <button class="tab-btn active" id="btn-tab-financeiro" onclick="mudarAba('Mercado Financeiro')">📈 Mercado Financeiro</button>
             <button class="tab-btn" id="btn-tab-esporte" onclick="mudarAba('Esporte')">⚽ Esporte</button>
         </div>
 
-        <!-- Lista de Previsões Ativas -->
         <div class="container-enquetes" id="lista-enquetes">
-            <!-- Injetado dinamicamente via JS -->
-        </div>
+            </div>
     </div>
 
     <script>
@@ -72,13 +70,25 @@
             window.location.href = 'index.html';
         }
 
+        // Função auxiliar para formatar a data do Supabase de forma amigável
+        function formatarDataHora(stringData) {
+            if(!stringData) return "Disponível agora";
+            const dataObjeto = new Date(stringData);
+            
+            // Formata no padrão brasileiro DD/MM/AAAA
+            const dataFormatada = dataObjeto.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            // Formata as horas e minutos
+            const horaFormatada = dataObjeto.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            
+            return `Iniciado em: ${dataFormatada} às ${horaFormatada}`;
+        }
+
         async function carregarPainel() {
-            // Atualiza Saldo do Usuário
             const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', usuarioLogado).maybeSingle();
             if(m) { document.getElementById('txt-saldo').innerText = parseFloat(m.saldo).toFixed(2); }
 
-            // Puxa Enquetes do Banco
-            const { data: enquetes } = await clientSupabase.from('enquetes').select('*').eq('categoria', abaAtual);
+            // Puxa Enquetes ordenando pelas mais recentes
+            const { data: enquetes } = await clientSupabase.from('enquetes').select('*').eq('categoria', abaAtual).order('created_at', { ascending: false });
             const container = document.getElementById('lista-enquetes');
             container.innerHTML = "";
 
@@ -90,9 +100,11 @@
             enquetes.forEach(enq => {
                 let tituloLimpo = enq.pergunta;
                 let op1 = "Opção 1", op2 = "Opção 2";
-                let textoContexto = ""; // Variável para armazenar a nova pergunta dinâmica
+                let textoContexto = "";
 
-                // Tratamento e separação da string injetada pelo ADM
+                // Formata a data de criação vinda do Supabase
+                let dataTextoFormatado = formatarDataHora(enq.created_at);
+
                 if (enq.pergunta.includes("[")) {
                     try {
                         const partes = enq.pergunta.split(" [");
@@ -100,18 +112,13 @@
                         const opcoesRaw = partes[1].replace("]", "").split(" vs ");
                         
                         if(enq.categoria === "Mercado Financeiro") {
-                            // Exemplo: WIN1! [f: 125300 vs ACIMA vs ABAIXO]
                             tituloLimpo = `${partes[0]} <span style="color:var(--accent-green);">(Ref: ${opcoesRaw[0].replace('f: ', '')})</span>`;
                             op1 = opcoesRaw[1] || "ACIMA";
                             op2 = opcoesRaw[2] || "ABAIXO";
-                            
-                            // Nova pergunta criativa para Mercado Financeiro
                             textoContexto = "📊 <b>Análise Diária:</b> O fechamento oficial deste ativo no pregão de hoje terminará <b>ACIMA</b> ou <b>ABAIXO</b> da referência base?";
                         } else {
                             op1 = opcoesRaw[0];
                             op2 = opcoesRaw[1];
-                            
-                            // Nova pergunta para Esportes
                             textoContexto = "🏆 <b>Palpite Esportivo:</b> Faça sua análise e defina qual será o desfecho deste confronto na vida real.";
                         }
                     } catch(e) { console.error("Erro no parse da pergunta", e); }
@@ -124,7 +131,7 @@
                     <div class="card-enquete">
                         <div class="card-header">
                             <span>MERCADO ATIVO</span>
-                            <span style="color:#60a5fa;">Pote Coletivo Dinâmico</span>
+                            <span class="data-enquete">${dataTextoFormatado}</span>
                         </div>
                         <div class="card-pergunta">${tituloLimpo}</div>
                         <div class="texto-contexto">${textoContexto}</div>
