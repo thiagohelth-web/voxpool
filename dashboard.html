@@ -1,14 +1,55 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Painel</title>
-</head>
-<body>
-    <h1>Painel do Membro</h1>
-    <p>Se você está vendo este texto, a página carregou.</p>
-    
-    <script>
-        console.log("O script carregou com sucesso.");
-    </script>
-</body>
-</html>
+async function solicitarSaque() {
+    const inputValor = document.getElementById('input-valor-saque');
+    const inputPix = document.getElementById('input-pix-saque');
+
+    // Validação simples
+    if (!inputValor || !inputPix) {
+        alert("Erro: Campos de saque não encontrados na página.");
+        return;
+    }
+
+    const valorSaque = parseFloat(inputValor.value);
+    const pix = inputPix.value;
+    const usuarioId = String(localStorage.getItem('vox_usuario')).trim();
+
+    if (!valorSaque || isNaN(valorSaque) || valorSaque <= 0) {
+        alert("Valor inválido.");
+        return;
+    }
+
+    try {
+        // Busca o membro e o saldo
+        const { data: membro, error: fetchError } = await clientSupabase
+            .from('membros')
+            .select('id, saldo')
+            .eq('id', usuarioId)
+            .maybeSingle();
+
+        if (fetchError || !membro) {
+            alert("Erro: Usuário não localizado no banco.");
+            return;
+        }
+
+        const saldoAtual = parseFloat(membro.saldo || 0);
+
+        if (saldoAtual < valorSaque) {
+            alert("Saldo insuficiente. Você tem: R$ " + saldoAtual);
+            return;
+        }
+
+        // Tenta atualizar
+        const { error: updateError } = await clientSupabase
+            .from('membros')
+            .update({ saldo: (saldoAtual - valorSaque) })
+            .eq('id', usuarioId);
+
+        if (updateError) throw updateError;
+
+        alert("Sucesso! Saldo atualizado.");
+        location.reload();
+
+    } catch (err) {
+        console.error("Erro ao processar:", err);
+        alert("Erro técnico ao atualizar saldo.");
+    }
+}
