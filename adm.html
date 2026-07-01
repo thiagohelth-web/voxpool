@@ -152,7 +152,6 @@
                 } else {
                     recargas.forEach(rec => {
                         if(rec.status !== 'APROVADO') {
-                            // CORREÇÃO AQUI: Aceita valor_rs, valor ou moedas para evitar bugs de saldo zerado
                             const val = parseFloat(rec.valor_rs || rec.valor || rec.moedas || 0);
                             const idMembro = rec.membro_id || "Sem Identificação";
                             let cl = ""; let st = "";
@@ -184,27 +183,40 @@
                     }
                 }
 
-                // 2. LISTAR PEDIDOS DE SAQUE (Lendo da tabela 'saques')
-                const { data: saques } = await clientSupabase.from('saques').select('*').or('status.eq.PENDENTE,status.eq.Pendente');
+                // 2. LISTAR PEDIDOS DE SAQUE (Lendo da tabela 'saques' de forma ampla)
+                const { data: saques } = await clientSupabase.from('saques').select('*');
                 const tSaques = document.getElementById('tabela-saques');
                 tSaques.innerHTML = "";
                 
-                if(!saques || saques.length === 0) {
-                    tSaques.innerHTML = "<tr><td colspan='4' style='color:gray;padding:10px;text-align:center;'>Nenhum pedido de saque pendente.</td></tr>";
-                } else {
+                let temSaquePendente = false;
+
+                if (saques && saques.length > 0) {
                     saques.forEach(saq => {
-                        const idMembroSaque = saq.membro_id;
-                        const moedasSacar = parseFloat(saq.moedas_sacar || saq.moedas || saq.valor || 0);
-                        tSaques.innerHTML += `<tr>
-                            <td><b>${idMembroSaque}</b></td>
-                            <td style="color:var(--accent-red); font-weight:bold;">${moedasSacar.toFixed(2)} Moedas</td>
-                            <td><code style="background:#1f2937; padding:4px 8px; border-radius:4px; color:#60a5fa;">${saq.chave_pix}</code></td>
-                            <td>
-                                <button class="btn-resolver" onclick="finalizarSaque('${saq.id}', 'FINALIZADO')">✅ Já fiz o PIX (Concluir)</button>
-                                <button class="btn-del" onclick="finalizarSaque('${saq.id}', 'RECUSADO_ESTORNADO', '${idMembroSaque}', ${moedasSacar})">❌ Recusar/Devolver</button>
-                            </td>
-                        </tr>`;
+                        // Converte o status para maiúsculo para comparar sem erros de digitação
+                        const statusNormalizado = saq.status ? saq.status.toUpperCase() : "PENDENTE";
+                        
+                        // Exibe se estiver pendente ou aguardando análise
+                        if (statusNormalizado === "PENDENTE" || statusNormalizado === "AGUARDANDO" || statusNormalizado === "" || statusNormalizado === "PENDING") {
+                            temSaquePendente = true;
+                            const idMembroSaque = saq.membro_id || "Sem Identificação";
+                            const moedasSacar = parseFloat(saq.moedas_sacar || saq.moedas || saq.valor || 0);
+                            const chavePixCliente = saq.chave_pix || saq.pix || "Não Informada";
+                            
+                            tSaques.innerHTML += `<tr>
+                                <td><b>${idMembroSaque}</b></td>
+                                <td style="color:var(--accent-red); font-weight:bold;">${moedasSacar.toFixed(2)} Moedas</td>
+                                <td><code style="background:#1f2937; padding:4px 8px; border-radius:4px; color:#60a5fa;">${chavePixCliente}</code></td>
+                                <td>
+                                    <button class="btn-resolver" onclick="finalizarSaque('${saq.id}', 'FINALIZADO')">✅ Já fiz o PIX (Concluir)</button>
+                                    <button class="btn-del" onclick="finalizarSaque('${saq.id}', 'RECUSADO_ESTORNADO', '${idMembroSaque}', ${moedasSacar})">❌ Recusar/Devolver</button>
+                                </td>
+                            </tr>`;
+                        }
                     });
+                }
+
+                if (!temSaquePendente) {
+                    tSaques.innerHTML = "<tr><td colspan='4' style='color:gray;padding:10px;text-align:center;'>Nenhum pedido de saque pendente.</td></tr>";
                 }
 
                 // 3. GERENCIADOR DE MEMBROS COMPLETO
@@ -294,7 +306,7 @@
             const valNum = parseFloat(novoValor);
             if(isNaN(valNum)) { alert("Valor inválido"); return; }
             await clientSupabase.from('membros').update({ saldo: valNum }).eq('id', membroId);
-            alert("Saldo updated manualmente!");
+            alert("Saldo atualizado manualmente!");
             carregarAdmin();
         }
 
@@ -314,7 +326,7 @@
             }
         }
 
-        // --- FUNÇÕES COMPLEMENTARES DE DEPOSITOS ATUALIZADAS ---
+        // --- FUNÇÕES COMPLEMENTARES DE DEPOSITOS ---
         async function aprovarRecarga(pId, mId, v) {
             const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', mId).maybeSingle();
             let s = m ? parseFloat(m.saldo) : 0;
