@@ -68,14 +68,12 @@
         </div>
     </header>
 
-    <!-- Caixa de Movimentações Financeiras -->
     <div class="caixa-financeira">
         <div class="botoes-fin">
             <button class="btn-fin btn-dep" onclick="alternarAbasFinanceiras('deposito')">➕ Depositar via PIX</button>
             <button class="btn-fin btn-saq" onclick="alternarAbasFinanceiras('saque')">💸 Solicitar Saque</button>
         </div>
 
-        <!-- Seção de Depósito -->
         <div id="painel-deposito" class="painel-fin">
             <h3>🟢 Adicionar Saldo via PIX</h3>
             <p style="font-size: 13px; color: #9ca3af; margin-bottom: 12px;">Copie a chave aleatória abaixo e pague o valor desejado no aplicativo do seu banco:</p>
@@ -85,14 +83,15 @@
                 <button class="btn-copy" onclick="copiarChavePixAleatoria()">Copiar</button>
             </div>
 
-            <label style="font-size:12px; color:gray;">Valor Pago (R$):</label>
+            <label style="font-size:12px; color:gray;">Valor Pago em R$:</label>
             <input type="number" id="dep-valor" class="input-fin" placeholder="Ex: 50.00" min="1">
-            <label style="font-size:12px; color:gray;">Seu Nome ou ID do Comprovante:</label>
-            <input type="text" id="dep-id" class="input-fin" placeholder="Informe algo para ajudar o ADM a identificar seu PIX">
-            <button class="btn-acao-fin" style="background: var(--accent-green); color: black;" onclick="enviarNotificacaoDeposito()">Confirmei o Pagamento</button>
+            <label style="font-size:12px; color:gray;">Quantidade de Moedas Correspondentes:</label>
+            <input type="number" id="dep-moedas" class="input-fin" placeholder="Ex: 50.00" min="1">
+            <label style="font-size:12px; color:gray;">Código / Nome do Comprovante:</label>
+            <input type="text" id="dep-id" class="input-fin" placeholder="Código de autenticação ou seu nome">
+            <button class="btn-copy" style="background: var(--accent-green); color: black; font-size:14px; padding:10px; width:100%; border-radius:6px;" onclick="enviarNotificacaoDeposito()">Confirmei o Pagamento</button>
         </div>
 
-        <!-- Seção de Saque -->
         <div id="painel-saque" class="painel-fin">
             <h3>🔴 Solicitar Saque de Capital</h3>
             <p style="font-size: 13px; color: #9ca3af; margin-bottom: 8px;">Informe o valor desejado e sua chave PIX de destino para recebimento:</p>
@@ -100,7 +99,7 @@
             <input type="number" id="saq-valor" class="input-fin" placeholder="Ex: 100.00" min="1">
             <label style="font-size:12px; color:gray;">Sua Chave PIX para Receber:</label>
             <input type="text" id="saq-chave" class="input-fin" placeholder="CPF, E-mail, Telefone ou Chave Aleatória">
-            <button class="btn-acao-fin" style="background: var(--accent-red); color: white;" onclick="enviarSolicitacaoSaque()">Confirmar Pedido de Saque</button>
+            <button class="btn-copy" style="background: var(--accent-red); color: white; font-size:14px; padding:10px; width:100%; border-radius:6px;" onclick="enviarSolicitacaoSaque()">Confirmar Pedido de Saque</button>
         </div>
     </div>
 
@@ -111,8 +110,7 @@
         </div>
 
         <div class="container-enquetes" id="lista-enquetes">
-            <!-- Injetado via JS -->
-        </div>
+            </div>
     </div>
 
     <script>
@@ -132,7 +130,7 @@
         function copiarChavePixAleatoria() {
             const txtChave = document.getElementById('chave-pix-vox').innerText;
             navigator.clipboard.writeText(txtChave).then(() => {
-                alert("Chave PIX copiada! Pague no seu banco usando o PIX Copia e Cola.");
+                alert("Chave PIX copiada!");
             });
         }
 
@@ -148,80 +146,125 @@
             }
         }
 
-        // CORREÇÃO: Tenta salvar na tabela 'depositos' ou 'solicitacoes_financeiras' dependendo da sua estrutura
+        // FUNÇÃO DE DEPÓSITO COM DEBUGAÇÃO ATIVA
         async function enviarNotificacaoDeposito() {
-            const valor = document.getElementById('dep-valor').value;
-            const refId = document.getElementById('dep-id').value;
+            try {
+                const valorRs = document.getElementById('dep-valor').value;
+                const moedas = document.getElementById('dep-moedas').value;
+                const refId = document.getElementById('dep-id').value;
 
-            if(!valor || parseFloat(valor) <= 0 || !refId.trim()) {
-                alert("Preencha todos os campos!"); return;
-            }
+                if(!valorRs || !moedas || !refId.trim()) {
+                    alert("Aviso: Por favor, preencha todos os campos do depósito!");
+                    return;
+                }
 
-            // Enviando para a tabela 'depositos' que o adm.html costuma escutar por padrão
-            const { error: err1 } = await clientSupabase.from('depositos').insert([{
-                membro_id: usuarioLogado,
-                valor: parseFloat(valor),
-                comprovante: refId,
-                status: 'PENDENTE'
-            }]);
-
-            // Backup defensivo caso sua tabela unificada ainda esteja sendo usada pelo ADM
-            if(err1) {
-                await clientSupabase.from('solicitacoes_financeiras').insert([{
+                // Payload completo mapeando as colunas exatas da tabela 'depositos'
+                const payload = {
                     membro_id: usuarioLogado,
-                    tipo: 'DEPOSITO',
-                    valor: parseFloat(valor),
+                    membro: usuarioLogado, // Enviado em redundância caso a coluna se chame apenas 'membro'
+                    valor: parseFloat(valorRs),
+                    valor_rs: parseFloat(valorRs),
+                    moedas: parseFloat(moedas),
+                    comprovante: refId,
                     detalhes: refId,
                     status: 'PENDENTE'
-                }]);
-            }
+                };
 
-            alert("Notificação enviada! Aguarde o ADM aprovar.");
-            document.getElementById('dep-valor').value = "";
-            document.getElementById('dep-id').value = "";
-            document.getElementById('painel-deposito').style.display = 'none';
+                console.log("Tentando enviar depósito...", payload);
+
+                // Tentativa 1: Tabela 'depositos'
+                let { error: err1 } = await clientSupabase.from('depositos').insert([payload]);
+                
+                if (err1) {
+                    console.warn("Falha na tabela 'depositos', tentando tabela unificada...", err1);
+                    // Tentativa 2: Tabela 'solicitacoes_financeiras'
+                    let { error: err2 } = await clientSupabase.from('solicitacoes_financeiras').insert([{
+                        membro_id: usuarioLogado,
+                        tipo: 'DEPOSITO',
+                        valor: parseFloat(moedas),
+                        detalhes: `R$: ${valorRs} - Ref: ${refId}`,
+                        status: 'PENDENTE'
+                    }]);
+                    
+                    if(err2) {
+                        throw new Error("Ambas as tabelas falharam ao salvar o depósito: " + JSON.stringify(err2));
+                    }
+                }
+
+                alert("Sucesso! Notificação enviada. O ADM já pode visualizar na Central.");
+                document.getElementById('dep-valor').value = "";
+                document.getElementById('dep-moedas').value = "";
+                document.getElementById('dep-id').value = "";
+                document.getElementById('painel-deposito').style.display = 'none';
+
+            } catch (err) {
+                console.error(err);
+                alert("Erro interno capturado: " + err.message);
+            }
         }
 
-        // CORREÇÃO: Tenta salvar na tabela 'saques' ou 'solicitacoes_financeiras'
+        // FUNÇÃO DE SAQUE COM DEBUGAÇÃO ATIVA
         async function enviarSolicitacaoSaque() {
-            const valor = document.getElementById('saq-valor').value;
-            const chavePix = document.getElementById('saq-chave').value;
+            try {
+                const valor = document.getElementById('saq-valor').value;
+                const chavePix = document.getElementById('saq-chave').value;
 
-            if(!valor || parseFloat(valor) <= 0 || !chavePix.trim()) {
-                alert("Preencha os dados corretamente!"); return;
-            }
+                if(!valor || !chavePix.trim()) {
+                    alert("Aviso: Preencha todos os campos do saque!");
+                    return;
+                }
 
-            const valorSaque = parseFloat(valor);
+                const valorSaque = parseFloat(valor);
 
-            const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', usuarioLogado).maybeSingle();
-            if(!m || parseFloat(m.saldo) < valorSaque) {
-                alert("Saldo insuficiente!"); return;
-            }
+                const { data: m, error: errSaldo } = await clientSupabase.from('membros').select('saldo').eq('id', usuarioLogado).maybeSingle();
+                if(errSaldo) console.error("Erro ao buscar saldo", errSaldo);
 
-            // Enviando para a tabela 'saques' que o adm.html costuma escutar por padrão
-            const { error: err2 } = await clientSupabase.from('saques').insert([{
-                membro_id: usuarioLogado,
-                valor: valorSaque,
-                chave_pix: chavePix,
-                status: 'PENDENTE'
-            }]);
+                if(!m || parseFloat(m.saldo) < valorSaque) {
+                    alert("Erro: Saldo insuficiente para efetuar este saque!");
+                    return;
+                }
 
-            // Backup defensivo
-            if(err2) {
-                await clientSupabase.from('solicitacoes_financeiras').insert([{
+                const payloadSaque = {
                     membro_id: usuarioLogado,
-                    tipo: 'SAQUE',
+                    membro: usuarioLogado,
                     valor: valorSaque,
-                    detalhes: chavePix,
+                    moedas: valorSaque,
+                    moedas_sacar: valorSaque,
+                    chave_pix: chavePix,
                     status: 'PENDENTE'
-                }]);
-            }
+                };
 
-            alert("Pedido de saque enviado com sucesso!");
-            document.getElementById('saq-valor').value = "";
-            document.getElementById('saq-chave').value = "";
-            document.getElementById('painel-saque').style.display = 'none';
-            carregarPainel();
+                console.log("Tentando enviar saque...", payloadSaque);
+
+                // Tentativa 1: Tabela 'saques'
+                let { error: err1 } = await clientSupabase.from('saques').insert([payloadSaque]);
+
+                if(err1) {
+                    console.warn("Falha na tabela 'saques', tentando tabela unificada...", err1);
+                    // Tentativa 2: Tabela 'solicitacoes_financeiras'
+                    let { error: err2 } = await clientSupabase.from('solicitacoes_financeiras').insert([{
+                        membro_id: usuarioLogado,
+                        tipo: 'SAQUE',
+                        valor: valorSaque,
+                        detalhes: `Chave PIX: ${chavePix}`,
+                        status: 'PENDENTE'
+                    }]);
+
+                    if(err2) {
+                        throw new Error("Ambas as tabelas falharam ao salvar o saque: " + JSON.stringify(err2));
+                    }
+                }
+
+                alert("Sucesso! Pedido de saque enviado e registrado.");
+                document.getElementById('saq-valor').value = "";
+                document.getElementById('saq-chave').value = "";
+                document.getElementById('painel-saque').style.display = 'none';
+                carregarPainel();
+
+            } catch (err) {
+                console.error(err);
+                alert("Erro interno capturado no saque: " + err.message);
+            }
         }
 
         function formatarDataHora(timestampBanco) {
@@ -325,7 +368,7 @@
                 valor_total: valorAlocado
             }]);
 
-            alert("Operação realizada com sucesso! Suas moedas foram alocadas no pote desta previsão.");
+            alert("Operação realizada com sucesso!");
             delete selecoesModificadas[idEnquete];
             carregarPainel();
         }
