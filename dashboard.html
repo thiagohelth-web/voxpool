@@ -1,9 +1,10 @@
 async function solicitarSaque() {
     const valorSaque = parseFloat(document.getElementById('input-valor-saque').value);
     const pix = document.getElementById('input-pix-saque').value;
-    
-    // Forçamos o ID para string para garantir que a busca no Supabase funcione
     const usuarioId = String(localStorage.getItem('vox_usuario')).trim();
+
+    // Diagnóstico: O que estamos enviando para o banco?
+    console.log("DEBUG - ID do Usuário sendo buscado:", usuarioId);
 
     if (!valorSaque || isNaN(valorSaque) || valorSaque <= 0) {
         alert("Por favor, insira um valor de saque válido.");
@@ -15,35 +16,39 @@ async function solicitarSaque() {
     }
 
     try {
-        // 1. Busca saldo atual
         const { data: membro, error: fetchError } = await clientSupabase
             .from('membros')
-            .select('saldo')
+            .select('id, saldo') // Incluímos o 'id' aqui para conferência
             .eq('id', usuarioId)
             .maybeSingle();
 
-        if (fetchError || !membro) {
-            console.error("Erro busca:", fetchError);
-            alert("Erro: Usuário não encontrado ou sessão expirada.");
+        if (fetchError) {
+            console.error("Erro do Supabase:", fetchError);
+            alert("Erro de conexão com o banco.");
+            return;
+        }
+
+        if (!membro) {
+            console.error("Nenhum membro encontrado com o ID:", usuarioId);
+            alert("Erro: O seu ID de usuário ('" + usuarioId + "') não foi localizado no banco de dados.");
             return;
         }
 
         const saldoAtual = parseFloat(membro.saldo || 0);
 
-        // 2. Validação
         if (saldoAtual < valorSaque) {
             alert("Saldo insuficiente. Você possui: R$ " + saldoAtual.toFixed(2));
             return;
         }
 
-        // 3. Registrar o pedido
+        // Registrar o pedido
         const { error: insertError } = await clientSupabase.from('saques').insert([
             { membro_id: usuarioId, moedas_sacar: valorSaque, chave_pix: pix, status: 'PENDENTE' }
         ]);
 
         if (insertError) throw insertError;
 
-        // 4. ATUALIZAR SALDO (Dedução)
+        // ATUALIZAR SALDO
         const novoSaldo = saldoAtual - valorSaque;
         const { error: updateError } = await clientSupabase
             .from('membros')
@@ -56,7 +61,7 @@ async function solicitarSaque() {
         location.reload();
 
     } catch (err) {
-        console.error("Erro crítico no saque:", err);
-        alert("Ocorreu um erro. Verifique se o seu ID de membro está correto.");
+        console.error("Erro crítico:", err);
+        alert("Ocorreu um erro. Verifique o console (F12) para detalhes.");
     }
 }
