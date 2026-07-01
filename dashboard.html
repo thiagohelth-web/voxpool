@@ -1,387 +1,113 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoxPopuli - Trader Painel</title>
-    <style>
-        :root {
-            --bg-main: #0b0f19; --bg-card: #111827; --bg-input: #1f2937;
-            --primary-blue: #2563eb; --accent-green: #10b981;
-            --accent-red: #ef4444; --text-main: #f3f4f6; --border-color: #374151;
+// FUNÇÃO DE DEPÓSITO REVISADA COM ALERTAS DE ERRO DETALHADOS DO SUPABASE
+async function enviarNotificacaoDeposito() {
+    try {
+        const valorRs = document.getElementById('dep-valor').value;
+        const moedas = document.getElementById('dep-moedas').value;
+        const refId = document.getElementById('dep-id').value;
+
+        if(!valorRs || !moedas || !refId.trim()) {
+            alert("Por favor, preencha todos os campos!");
+            return;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); padding: 20px; }
-        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
-        .logo { font-size: 24px; font-weight: bold; color: #3b82f6; }
-        .user-nav { display: flex; align-items: center; gap: 15px; }
-        .saldo-box { font-size: 16px; }
-        .btn-sair { background: #374151; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-sair:hover { background: #4b5563; }
+
+        const payload = {
+            membro_id: usuarioLogado,
+            membro: usuarioLogado, 
+            valor: parseFloat(valorRs),
+            valor_rs: parseFloat(valorRs),
+            moedas: parseFloat(moedas),
+            comprovante: refId,
+            detalhes: refId,
+            status: 'PENDENTE'
+        };
+
+        // Força a tentativa na tabela 'depositos'
+        let { data, error: err1 } = await clientSupabase.from('depositos').insert([payload]).select();
         
-        /* Caixa de Ações Financeiras */
-        .caixa-financeira { max-width: 800px; margin: 0 auto 25px auto; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .botoes-fin { display: flex; gap: 15px; }
-        .btn-fin { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
-        .btn-dep { background: #065f46; border: 1px solid var(--accent-green); }
-        .btn-dep:hover { background: var(--accent-green); color: black; }
-        .btn-saq { background: #991b1b; border: 1px solid var(--accent-red); }
-        .btn-saq:hover { background: var(--accent-red); }
-        
-        /* Paineis de Sanfona Ocultos */
-        .painel-fin { display: none; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-top: 5px; }
-        .painel-fin h3 { font-size: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-        .input-fin { width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; color: white; margin-bottom: 10px; margin-top: 5px; }
-        .btn-acao-fin { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        
-        /* Box de Copiar Chave */
-        .pix-copy-box { display: flex; gap: 10px; margin-bottom: 15px; background: var(--bg-main); padding: 8px; border-radius: 6px; border: 1px dashed var(--accent-green); align-items: center; }
-        .pix-key-text { font-size: 12px; color: #10b981; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-        .btn-copy { background: #2563eb; color: white; border: none; padding: 5px 10px; font-size: 11px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-copy:hover { background: #3b82f6; }
-
-        .tabs { max-width: 800px; margin: 0 auto 25px auto; display: flex; gap: 15px; }
-        .tab-btn { flex: 1; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-color); color: white; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
-        .tab-btn.active { background: var(--primary-blue); border-color: #60a5fa; }
-        .container-enquetes { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
-        .card-enquete { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; }
-        .card-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 12px; color: #9ca3af; }
-        .card-pergunta { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-        .texto-contexto { font-size: 14px; color: #9ca3af; margin-bottom: 15px; line-height: 1.4; }
-        .grupo-botoes { display: flex; gap: 10px; margin-bottom: 12px; }
-        .btn-opcao { flex: 1; padding: 10px; background: var(--bg-input); border: 1px solid var(--border-color); color: white; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-opcao:hover { border-color: #60a5fa; }
-        .btn-opcao.selecionado { background: var(--primary-blue); border-color: #60a5fa; }
-        .input-aposta { width: 100%; padding: 10px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: white; margin-bottom: 10px; }
-        .btn-confirmar { width: 100%; padding: 12px; background: var(--accent-green); color: black; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .data-enquete { color: #858d99; font-size: 11px; font-weight: 500; }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
-
-    <header>
-        <div class="logo">VoxPopuli 📈</div>
-        <div class="user-nav">
-            <span class="saldo-box">Saldo: <span id="txt-saldo" style="color: var(--accent-green); font-weight: bold;">0.00</span> Moedas</span>
-            <button class="btn-sair" onclick="deslogarUsuario()">Sair</button>
-        </div>
-    </header>
-
-    <div class="caixa-financeira">
-        <div class="botoes-fin">
-            <button class="btn-fin btn-dep" onclick="alternarAbasFinanceiras('deposito')">➕ Depositar via PIX</button>
-            <button class="btn-fin btn-saq" onclick="alternarAbasFinanceiras('saque')">💸 Solicitar Saque</button>
-        </div>
-
-        <div id="painel-deposito" class="painel-fin">
-            <h3>🟢 Adicionar Saldo via PIX</h3>
-            <p style="font-size: 13px; color: #9ca3af; margin-bottom: 12px;">Copie a chave aleatória abaixo e pague o valor desejado no aplicativo do seu banco:</p>
+        if (err1) {
+            console.error("Erro na tabela 'depositos':", err1);
             
-            <div class="pix-copy-box">
-                <span class="pix-key-text" id="chave-pix-vox">ef0ce40a-5e1e-42ef-a2b6-a2d3664491bd</span>
-                <button class="btn-copy" onclick="copiarChavePixAleatoria()">Copiar</button>
-            </div>
-
-            <label style="font-size:12px; color:gray;">Valor Pago em R$:</label>
-            <input type="number" id="dep-valor" class="input-fin" placeholder="Ex: 50.00" min="1">
-            <label style="font-size:12px; color:gray;">Quantidade de Moedas Correspondentes:</label>
-            <input type="number" id="dep-moedas" class="input-fin" placeholder="Ex: 50.00" min="1">
-            <label style="font-size:12px; color:gray;">Código / Nome do Comprovante:</label>
-            <input type="text" id="dep-id" class="input-fin" placeholder="Código de autenticação ou seu nome">
-            <button class="btn-copy" style="background: var(--accent-green); color: black; font-size:14px; padding:10px; width:100%; border-radius:6px;" onclick="enviarNotificacaoDeposito()">Confirmei o Pagamento</button>
-        </div>
-
-        <div id="painel-saque" class="painel-fin">
-            <h3>🔴 Solicitar Saque de Capital</h3>
-            <p style="font-size: 13px; color: #9ca3af; margin-bottom: 8px;">Informe o valor desejado e sua chave PIX de destino para recebimento:</p>
-            <label style="font-size:12px; color:gray;">Valor do Saque (Moedas):</label>
-            <input type="number" id="saq-valor" class="input-fin" placeholder="Ex: 100.00" min="1">
-            <label style="font-size:12px; color:gray;">Sua Chave PIX para Receber:</label>
-            <input type="text" id="saq-chave" class="input-fin" placeholder="CPF, E-mail, Telefone ou Chave Aleatória">
-            <button class="btn-copy" style="background: var(--accent-red); color: white; font-size:14px; padding:10px; width:100%; border-radius:6px;" onclick="enviarSolicitacaoSaque()">Confirmar Pedido de Saque</button>
-        </div>
-    </div>
-
-    <div>
-        <div class="tabs">
-            <button class="tab-btn active" id="btn-tab-financeiro" onclick="mudarAba('Mercado Financeiro')">📈 Mercado Financeiro</button>
-            <button class="tab-btn" id="btn-tab-esporte" onclick="mudarAba('Esporte')">⚽ Esporte</button>
-        </div>
-
-        <div class="container-enquetes" id="lista-enquetes">
-            </div>
-    </div>
-
-    <script>
-        const SUPABASE_URL = "https://xxxzluqjgqwkpzjjxpbj.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHpsdXFqZ3F3a3B6amp4cGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MTA2NjcsImV4cCI6MjA5ODE4NjY2N30.VzGPY5L8EhKt7-ARJaShpM6mMl8kA2tlRG_S4dtUPzc";
-        const clientSupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        let usuarioLogado = localStorage.getItem('vox_usuario') || "thiagohelth@gmail.com"; 
-        let abaAtual = "Mercado Financeiro";
-        let selecoesModificadas = {};
-
-        function deslogarUsuario() {
-            localStorage.removeItem('vox_usuario');
-            window.location.href = 'index.html';
-        }
-
-        function copiarChavePixAleatoria() {
-            const txtChave = document.getElementById('chave-pix-vox').innerText;
-            navigator.clipboard.writeText(txtChave).then(() => {
-                alert("Chave PIX copiada!");
-            });
-        }
-
-        function alternarAbasFinanceiras(tipo) {
-            const pDep = document.getElementById('painel-deposito');
-            const pSaq = document.getElementById('painel-saque');
-            if(tipo === 'deposito') {
-                pSaq.style.display = 'none';
-                pDep.style.display = pDep.style.display === 'block' ? 'none' : 'block';
-            } else {
-                pDep.style.display = 'none';
-                pSaq.style.display = pSaq.style.display === 'block' ? 'none' : 'block';
-            }
-        }
-
-        // FUNÇÃO DE DEPÓSITO COM DEBUGAÇÃO ATIVA
-        async function enviarNotificacaoDeposito() {
-            try {
-                const valorRs = document.getElementById('dep-valor').value;
-                const moedas = document.getElementById('dep-moedas').value;
-                const refId = document.getElementById('dep-id').value;
-
-                if(!valorRs || !moedas || !refId.trim()) {
-                    alert("Aviso: Por favor, preencha todos os campos do depósito!");
-                    return;
-                }
-
-                // Payload completo mapeando as colunas exatas da tabela 'depositos'
-                const payload = {
-                    membro_id: usuarioLogado,
-                    membro: usuarioLogado, // Enviado em redundância caso a coluna se chame apenas 'membro'
-                    valor: parseFloat(valorRs),
-                    valor_rs: parseFloat(valorRs),
-                    moedas: parseFloat(moedas),
-                    comprovante: refId,
-                    detalhes: refId,
-                    status: 'PENDENTE'
-                };
-
-                console.log("Tentando enviar depósito...", payload);
-
-                // Tentativa 1: Tabela 'depositos'
-                let { error: err1 } = await clientSupabase.from('depositos').insert([payload]);
-                
-                if (err1) {
-                    console.warn("Falha na tabela 'depositos', tentando tabela unificada...", err1);
-                    // Tentativa 2: Tabela 'solicitacoes_financeiras'
-                    let { error: err2 } = await clientSupabase.from('solicitacoes_financeiras').insert([{
-                        membro_id: usuarioLogado,
-                        tipo: 'DEPOSITO',
-                        valor: parseFloat(moedas),
-                        detalhes: `R$: ${valorRs} - Ref: ${refId}`,
-                        status: 'PENDENTE'
-                    }]);
-                    
-                    if(err2) {
-                        throw new Error("Ambas as tabelas falharam ao salvar o depósito: " + JSON.stringify(err2));
-                    }
-                }
-
-                alert("Sucesso! Notificação enviada. O ADM já pode visualizar na Central.");
-                document.getElementById('dep-valor').value = "";
-                document.getElementById('dep-moedas').value = "";
-                document.getElementById('dep-id').value = "";
-                document.getElementById('painel-deposito').style.display = 'none';
-
-            } catch (err) {
-                console.error(err);
-                alert("Erro interno capturado: " + err.message);
-            }
-        }
-
-        // FUNÇÃO DE SAQUE COM DEBUGAÇÃO ATIVA
-        async function enviarSolicitacaoSaque() {
-            try {
-                const valor = document.getElementById('saq-valor').value;
-                const chavePix = document.getElementById('saq-chave').value;
-
-                if(!valor || !chavePix.trim()) {
-                    alert("Aviso: Preencha todos os campos do saque!");
-                    return;
-                }
-
-                const valorSaque = parseFloat(valor);
-
-                const { data: m, error: errSaldo } = await clientSupabase.from('membros').select('saldo').eq('id', usuarioLogado).maybeSingle();
-                if(errSaldo) console.error("Erro ao buscar saldo", errSaldo);
-
-                if(!m || parseFloat(m.saldo) < valorSaque) {
-                    alert("Erro: Saldo insuficiente para efetuar este saque!");
-                    return;
-                }
-
-                const payloadSaque = {
-                    membro_id: usuarioLogado,
-                    membro: usuarioLogado,
-                    valor: valorSaque,
-                    moedas: valorSaque,
-                    moedas_sacar: valorSaque,
-                    chave_pix: chavePix,
-                    status: 'PENDENTE'
-                };
-
-                console.log("Tentando enviar saque...", payloadSaque);
-
-                // Tentativa 1: Tabela 'saques'
-                let { error: err1 } = await clientSupabase.from('saques').insert([payloadSaque]);
-
-                if(err1) {
-                    console.warn("Falha na tabela 'saques', tentando tabela unificada...", err1);
-                    // Tentativa 2: Tabela 'solicitacoes_financeiras'
-                    let { error: err2 } = await clientSupabase.from('solicitacoes_financeiras').insert([{
-                        membro_id: usuarioLogado,
-                        tipo: 'SAQUE',
-                        valor: valorSaque,
-                        detalhes: `Chave PIX: ${chavePix}`,
-                        status: 'PENDENTE'
-                    }]);
-
-                    if(err2) {
-                        throw new Error("Ambas as tabelas falharam ao salvar o saque: " + JSON.stringify(err2));
-                    }
-                }
-
-                alert("Sucesso! Pedido de saque enviado e registrado.");
-                document.getElementById('saq-valor').value = "";
-                document.getElementById('saq-chave').value = "";
-                document.getElementById('painel-saque').style.display = 'none';
-                carregarPainel();
-
-            } catch (err) {
-                console.error(err);
-                alert("Erro interno capturado no saque: " + err.message);
-            }
-        }
-
-        function formatarDataHora(timestampBanco) {
-            const dataObjeto = timestampBanco ? new Date(timestampBanco) : new Date();
-            if (isNaN(dataObjeto.getTime())) return `📅 Operação Ativa`;
-            const dataFormatada = dataObjeto.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const horaFormatada = dataObjeto.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            return `📅 Aberto em: ${dataFormatada} às ${horaFormatada}`;
-        }
-
-        async function carregarPainel() {
-            try {
-                const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', usuarioLogado).maybeSingle();
-                if(m) { document.getElementById('txt-saldo').innerText = parseFloat(m.saldo).toFixed(2); }
-
-                let { data: enquetes, error } = await clientSupabase.from('enquetes').select('*').eq('categoria', abaAtual);
-                if (error) return;
-
-                const container = document.getElementById('lista-enquetes');
-                container.innerHTML = "";
-
-                if(!enquetes || enquetes.length === 0) {
-                    container.innerHTML = `<div style="text-align:center; color:gray; padding:20px;">Nenhuma previsão disponível nesta categoria no momento.</div>`;
-                    return;
-                }
-
-                enquetes.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-
-                enquetes.forEach(enq => {
-                    let tituloLimpo = enq.pergunta;
-                    let op1 = "Opção 1", op2 = "Opção 2";
-                    let textoContexto = "";
-                    let stringTempo = formatarDataHora(enq.created_at);
-
-                    if (enq.pergunta.includes("[")) {
-                        try {
-                            const partes = enq.pergunta.split(" [");
-                            tituloLimpo = partes[0];
-                            const opcoesRaw = partes[1].replace("]", "").split(" vs ");
-                            
-                            if(enq.categoria === "Mercado Financeiro") {
-                                tituloLimpo = `${partes[0]} <span style="color:var(--accent-green);">(Ref: ${opcoesRaw[0].replace('f: ', '')})</span>`;
-                                op1 = opcoesRaw[1] || "ACIMA";
-                                op2 = opcoesRaw[2] || "ABAIXO";
-                                textoContexto = "📊 <b>Análise Diária:</b> O fechamento oficial deste ativo no pregão de hoje terminará <b>ACIMA</b> ou <b>ABAIXO</b> da referência base?";
-                            } else {
-                                op1 = opcoesRaw[0];
-                                op2 = opcoesRaw[1];
-                                textoContexto = "🏆 <b>Palpite Esportivo:</b> Faça sua análise e defina qual será o desfecho deste confronto na vida real.";
-                            }
-                        } catch(e) { console.error(e); }
-                    }
-
-                    let idUnico = enq.id;
-                    let sel = selecoesModificadas[idUnico] || "";
-
-                    container.innerHTML += `
-                        <div class="card-enquete">
-                            <div class="card-header">
-                                <span>MERCADO ATIVO</span>
-                                <span class="data-enquete">${stringTempo}</span>
-                            </div>
-                            <div class="card-pergunta">${tituloLimpo}</div>
-                            <div class="texto-contexto">${textoContexto}</div>
-                            <div class="grupo-botoes">
-                                <button class="btn-opcao ${sel === '1' ? 'selecionado' : ''}" onclick="selecionarLado('${idUnico}', '1')">${op1}</button>
-                                <button class="btn-opcao ${sel === '2' ? 'selecionado' : ''}" onclick="selecionarLado('${idUnico}', '2')">${op2}</button>
-                            </div>
-                            <input type="number" id="val-${idUnico}" class="input-aposta" placeholder="Quantidade de moedas para alocar..." min="1">
-                            <button class="btn-confirmar" onclick="enviarOrdemPrevisao('${idUnico}')">Confirmar Operação</button>
-                        </div>
-                    `;
-                });
-            } catch (err) { console.error(err); }
-        }
-
-        function selecionarLado(id, opcao) {
-            selecoesModificadas[id] = opcao.toString();
-            carregarPainel();
-        }
-
-        async function enviarOrdemPrevisao(idEnquete) {
-            let escolha = selecoesModificadas[idEnquete];
-            let valorInput = document.getElementById(`val-${idEnquete}`).value;
-
-            if(!escolha) { alert("Por favor, selecione uma das opções antes de confirmar!"); return; }
-            if(!valorInput || parseFloat(valorInput) <= 0) { alert("Insira uma quantidade de moedas válida!"); return; }
-
-            let valorAlocado = parseFloat(valorInput);
-
-            const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', usuarioLogado).maybeSingle();
-            if(!m || parseFloat(m.saldo) < valorAlocado) { alert("Saldo insuficiente para realizar essa operação!"); return; }
-
-            let novoSaldo = parseFloat(m.saldo) - valorAlocado;
-            await clientSupabase.from('membros').update({ saldo: novoSaldo }).eq('id', usuarioLogado);
-
-            await clientSupabase.from('historico_apostas').insert([{
-                enquete_id: idEnquete.toString(),
+            // Tenta a tabela unificada caso a primeira não exista
+            let { error: err2 } = await clientSupabase.from('solicitacoes_financeiras').insert([{
                 membro_id: usuarioLogado,
-                opcao_escolhida: escolha,
-                valor_total: valorAlocado
+                tipo: 'DEPOSITO',
+                valor: parseFloat(moedas),
+                detalhes: `R$: ${valorRs} - Ref: ${refId}`,
+                status: 'PENDENTE'
+            }]);
+            
+            if(err2) {
+                alert(`Erro no Supabase!\nCódigo: ${err2.code}\nMensagem: ${err2.message}\nDetalhes: ${err2.details}`);
+                return;
+            }
+        }
+
+        alert("Notificação enviada com sucesso no código! Verifique se apareceu no ADM.");
+        document.getElementById('dep-valor').value = "";
+        document.getElementById('dep-moedas').value = "";
+        document.getElementById('dep-id').value = "";
+        document.getElementById('painel-deposito').style.display = 'none';
+
+    } catch (err) {
+        alert("Erro inesperado no JavaScript: " + err.message);
+    }
+}
+
+// FUNÇÃO DE SAQUE REVISADA COM ALERTAS DE ERRO DETALHADOS DO SUPABASE
+async function enviarSolicitacaoSaque() {
+    try {
+        const valor = document.getElementById('saq-valor').value;
+        const chavePix = document.getElementById('saq-chave').value;
+
+        if(!valor || !chavePix.trim()) {
+            alert("Preencha todos os campos!");
+            return;
+        }
+
+        const valorSaque = parseFloat(valor);
+
+        const { data: m, error: errSaldo } = await clientSupabase.from('membros').select('saldo').eq('id', usuarioLogado).maybeSingle();
+        if(!m || parseFloat(m.saldo) < valorSaque) {
+            alert("Saldo insuficiente ou erro ao verificar saldo atual.");
+            return;
+        }
+
+        const payloadSaque = {
+            membro_id: usuarioLogado,
+            membro: usuarioLogado,
+            valor: valorSaque,
+            moedas: valorSaque,
+            moedas_sacar: valorSaque,
+            chave_pix: chavePix,
+            status: 'PENDENTE'
+        };
+
+        let { error: err1 } = await clientSupabase.from('saques').insert([payloadSaque]);
+
+        if(err1) {
+            console.error("Erro na tabela 'saques':", err1);
+            
+            let { error: err2 } = await clientSupabase.from('solicitacoes_financeiras').insert([{
+                membro_id: usuarioLogado,
+                tipo: 'SAQUE',
+                valor: valorSaque,
+                detalhes: `Chave PIX: ${chavePix}`,
+                status: 'PENDENTE'
             }]);
 
-            alert("Operação realizada com sucesso!");
-            delete selecoesModificadas[idEnquete];
-            carregarPainel();
+            if(err2) {
+                alert(`Erro no Supabase!\nCódigo: ${err2.code}\nMensagem: ${err2.message}`);
+                return;
+            }
         }
 
-        function mudarAba(novaAba) {
-            abaAtual = novaAba;
-            document.getElementById('btn-tab-financeiro').classList.toggle('active', novaAba === 'Mercado Financeiro');
-            document.getElementById('btn-tab-esporte').classList.toggle('active', novaAba === 'Esporte');
-            carregarPainel();
-        }
-
+        alert("Pedido de saque enviado com sucesso no código!");
+        document.getElementById('saq-valor').value = "";
+        document.getElementById('saq-chave').value = "";
+        document.getElementById('painel-saque').style.display = 'none';
         carregarPainel();
-        setInterval(carregarPainel, 10000);
-    </script>
-</body>
-</html>
+
+    } catch (err) {
+        alert("Erro inesperado no JavaScript: " + err.message);
+    }
+}
