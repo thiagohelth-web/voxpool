@@ -27,7 +27,7 @@
         .btn-del { background: var(--accent-red); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #374151; }
         .linha-paga { background: rgba(16, 185, 129, 0.12) !important; }
-        .linha-recusada { background: rgba(217, 119, 6, 0.1) !important; }
+        .linha-recusada { background: rgba(239, 68, 68, 0.12) !important; }
         .status-badge { padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -53,7 +53,9 @@
                         <th>Ações</th>
                     </tr>
                 </thead>
-                <tbody id="tabela-recargas"></tbody>
+                <tbody id="tabela-recargas">
+                    <tr><td colspan="5" style="color:gray; padding:15px; text-align:center;">Buscando depósitos no banco...</td></tr>
+                </tbody>
             </table>
         </div>
 
@@ -68,7 +70,9 @@
                         <th>Ações</th>
                     </tr>
                 </thead>
-                <tbody id="tabela-saques"></tbody>
+                <tbody id="tabela-saques">
+                    <tr><td colspan="4" style="color:gray; padding:15px; text-align:center;">Buscando saques pendentes...</td></tr>
+                </tbody>
             </table>
         </div>
         
@@ -139,40 +143,67 @@
 
         async function carregarAdmin() {
             try {
-                // 1. LISTAR RECARGAS
-                const { data: recargas } = await clientSupabase.from('pedidos_recarga').select('*').neq('status', 'aprovado');
+                // 1. LISTAR RECARGAS (Lendo da tabela 'depositos' e filtrando os PENDENTES)
+                const { data: recargas } = await clientSupabase.from('depositos').select('*');
                 const tRecargas = document.getElementById('tabela-recargas');
                 tRecargas.innerHTML = "";
-                if (recargas) {
+                
+                if (!recargas || recargas.length === 0) {
+                    tRecargas.innerHTML = "<tr><td colspan='5' style='color:gray; padding:10px; text-align:center;'>Nenhum depósito pendente.</td></tr>";
+                } else {
                     recargas.forEach(rec => {
-                        const val = parseFloat(rec.quantidade_moedas);
-                        let cl = ""; let st = "";
-                        if (rec.status === "envio_confirmado_usuario") { cl = "class='linha-paga'"; st = `<span class="status-badge" style="background:var(--accent-green);color:black;">💰 PIX ENVIADO</span>`; }
-                        else if (rec.status === "pix_nao_recebido") { cl = "class='linha-recusada'"; st = `<span class="status-badge" style="background:var(--accent-red)">❌ ERRO NOTIFICADO</span>`; }
-                        else { st = `<span class="status-badge" style="background:#4b5563">⏳ AGUARDANDO</span>`; }
-                        tRecargas.innerHTML += `<tr ${cl}><td><b>${rec.membro_id}</b></td><td>${val}</td><td>R$ ${val.toFixed(2)}</td><td>${st}</td><td>
-                            <button class="btn-resolver" onclick="aprovarRecarga('${rec.id}','${rec.membro_id}',${val})">Liberar Saldo</button>
-                            <button class="btn-recusar" onclick="notificarNaoRecebido('${rec.id}')">Avisar Erro</button>
-                            <button class="btn-del" onclick="deletarRecarga('${rec.id}')">X</button>
-                        </td></tr>`;
+                        // Só exibe na lista o que não foi aprovado de vez
+                        if(rec.status !== 'APROVADO') {
+                            const val = parseFloat(rec.moedas || rec.valor || 0);
+                            const idMembro = rec.membro || rec.membro_id || "Sem Identificação";
+                            let cl = ""; let st = "";
+                            
+                            if (rec.status === "PENDENTE" || rec.status === "envio_confirmado_usuario") { 
+                                cl = "class='linha-paga'"; 
+                                st = `<span class="status-badge" style="background:var(--accent-green);color:black;">💰 PIX ENVIADO</span>`; 
+                            } else if (rec.status === "RECUSADO" || rec.status === "pix_nao_recebido") { 
+                                cl = "class='linha-recusada'"; 
+                                st = `<span class="status-badge" style="background:var(--accent-red);color:white;">❌ ERRO NOTIFICADO</span>`; 
+                            } else { 
+                                st = `<span class="status-badge" style="background:#4b5563">⏳ AGUARDANDO</span>`; 
+                            }
+                            
+                            tRecargas.innerHTML += `<tr ${cl}>
+                                <td><b>${idMembro}</b><br><small style="color:gray;">Id/Ref: ${rec.comprovante || 'Nenhum'}</small></td>
+                                <td>${val.toFixed(2)}</td>
+                                <td>R$ ${val.toFixed(2)}</td>
+                                <td>${st}</td>
+                                <td>
+                                    <button class="btn-resolver" onclick="aprovarRecarga('${rec.id}','${idMembro}',${val})">Liberar Saldo</button>
+                                    <button class="btn-recusar" onclick="notificarNaoRecebido('${rec.id}')">Avisar Erro</button>
+                                    <button class="btn-del" onclick="deletarRecarga('${rec.id}')">X</button>
+                                </td>
+                            </tr>`;
+                        }
                     });
+                    if(tRecargas.innerHTML === "") {
+                        tRecargas.innerHTML = "<tr><td colspan='5' style='color:gray; padding:10px; text-align:center;'>Todos os depósitos foram processados!</td></tr>";
+                    }
                 }
 
-                // 2. LISTAR PEDIDOS DE SAQUE
-                const { data: saques } = await clientSupabase.from('pedidos_saque').select('*').eq('status', 'pendente');
+                // 2. LISTAR PEDIDOS DE SAQUE (Lendo da tabela 'saques' filtrando por PENDENTE)
+                const { data: saques } = await clientSupabase.from('saques').select('*').eq('status', 'PENDENTE');
                 const tSaques = document.getElementById('tabela-saques');
                 tSaques.innerHTML = "";
+                
                 if(!saques || saques.length === 0) {
-                    tSaques.innerHTML = "<tr><td colspan='4' style='color:gray;padding:10px;'>Nenhum pedido de saque pendente.</td></tr>";
+                    tSaques.innerHTML = "<tr><td colspan='4' style='color:gray;padding:10px;text-align:center;'>Nenhum pedido de saque pendente.</td></tr>";
                 } else {
                     saques.forEach(saq => {
+                        const idMembroSaque = saq.membro || saq.membro_id;
+                        const moedasSacar = saq.moedas_sacar || saq.valor || 0;
                         tSaques.innerHTML += `<tr>
-                            <td><b>${saq.membro_id}</b></td>
-                            <td style="color:var(--accent-red); font-weight:bold;">${saq.quantidade_moedas} Moedas</td>
+                            <td><b>${idMembroSaque}</b></td>
+                            <td style="color:var(--accent-red); font-weight:bold;">${parseFloat(moedasSacar).toFixed(2)} Moedas</td>
                             <td><code style="background:#1f2937; padding:4px 8px; border-radius:4px; color:#60a5fa;">${saq.chave_pix}</code></td>
                             <td>
-                                <button class="btn-resolver" onclick="finalizarSaque('${saq.id}', 'pago')">✅ Já fiz o PIX (Concluir)</button>
-                                <button class="btn-del" onclick="finalizarSaque('${saq.id}', 'recusado', '${saq.membro_id}', ${saq.quantidade_moedas})">❌ Recusar/Devolver</button>
+                                <button class="btn-resolver" onclick="finalizarSaque('${saq.id}', 'FINALIZADO')">✅ Já fiz o PIX (Concluir)</button>
+                                <button class="btn-del" onclick="finalizarSaque('${saq.id}', 'RECUSADO_ESTORNADO', '${idMembroSaque}', ${moedasSacar})">❌ Recusar/Devolver</button>
                             </td>
                         </tr>`;
                     });
@@ -210,21 +241,15 @@
                         let o1 = "Opção 1", o2 = "Opção 2"; let ex = enq.pergunta;
                         
                         if (enq.categoria === "Mercado Financeiro") {
-                            o1 = "ACIMA";
-                            o2 = "ABAIXO";
-                            try {
-                                if (enq.pergunta.includes(" vs ")) {
-                                    ex = enq.pergunta.split(" vs ")[0] + "]";
-                                }
-                            } catch(e){}
+                            o1 = "ACIMA"; o2 = "ABAIXO";
+                            try { if (enq.pergunta.includes(" vs ")) { ex = enq.pergunta.split(" vs ")[0] + "]"; } } catch(e){}
                         } else {
                             if (enq.pergunta.includes("[") && enq.pergunta.includes("vs")) {
                                 try { 
                                     const partes = enq.pergunta.split(" ["); 
                                     ex = partes[0]; 
                                     const opcoesRaw = partes[1].replace("]", "").split(" vs "); 
-                                    o1 = opcoesRaw[0]; 
-                                    o2 = opcoesRaw[1]; 
+                                    o1 = opcoesRaw[0]; o2 = opcoesRaw[1]; 
                                 } catch(e){}
                             }
                         }
@@ -243,11 +268,11 @@
             } catch(e) { console.error(e); }
         }
 
-        // --- FUNÇÕES DE SAQUE ---
+        // --- FUNÇÕES DE SAQUE ATUALIZADAS ---
         async function finalizarSaque(saqueId, novoStatus, membroId, valorEstorno) {
-            if (novoStatus === 'pago') {
+            if (novoStatus === 'FINALIZADO') {
                 if(confirm("Você confirma que já fez a transferência PIX bancária para este membro?")) {
-                    await clientSupabase.from('pedidos_saque').update({ status: 'pago' }).eq('id', saqueId);
+                    await clientSupabase.from('saques').update({ status: 'FINALIZADO' }).eq('id', saqueId);
                     alert("Saque marcado como concluído e pago!");
                 }
             } else {
@@ -255,7 +280,7 @@
                     const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', membroId).maybeSingle();
                     let saldoAtual = m ? parseFloat(m.saldo) : 0;
                     await clientSupabase.from('membros').update({ saldo: saldoAtual + parseFloat(valorEstorno) }).eq('id', membroId);
-                    await clientSupabase.from('pedidos_saque').update({ status: 'recusado' }).eq('id', saqueId);
+                    await clientSupabase.from('saques').update({ status: 'RECUSADO_ESTORNADO' }).eq('id', saqueId);
                     alert("Saque recusado e fundos estornados para o membro.");
                 }
             }
@@ -269,7 +294,7 @@
             const valNum = parseFloat(novoValor);
             if(isNaN(valNum)) { alert("Valor inválido"); return; }
             await clientSupabase.from('membros').update({ saldo: valNum }).eq('id', membroId);
-            alert("Saldo atualizado manualmente!");
+            alert("Saldo updated manualmente!");
             carregarAdmin();
         }
 
@@ -289,16 +314,29 @@
             }
         }
 
-        // --- FUNÇÕES COMPLEMENTARES DE RECARGA ---
+        // --- FUNÇÕES COMPLEMENTARES DE DEPOSITOS ATUALIZADAS ---
         async function aprovarRecarga(pId, mId, v) {
             const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', mId).maybeSingle();
             let s = m ? parseFloat(m.saldo) : 0;
+            // Aloca saldo real na conta do membro
             await clientSupabase.from('membros').update({ saldo: s + v }).eq('id', mId);
-            await clientSupabase.from('pedidos_recarga').update({ status: 'aprovado' }).eq('id', pId);
-            alert("Depósito Liberado!"); carregarAdmin();
+            // Atualiza status na tabela depositos para APROVADO
+            await clientSupabase.from('depositos').update({ status: 'APROVADO' }).eq('id', pId);
+            alert("Depósito Liberado com Sucesso!"); 
+            carregarAdmin();
         }
-        async function notificarNaoRecebido(id) { await clientSupabase.from('pedidos_recarga').update({ status: 'pix_nao_recebido' }).eq('id', id); carregarAdmin(); }
-        async function deletarRecarga(id) { if(confirm("Excluir pedido?")) { await clientSupabase.from('pedidos_recarga').delete().eq('id', id); carregarAdmin(); } }
+        
+        async function notificarNaoRecebido(id) { 
+            await clientSupabase.from('depositos').update({ status: 'RECUSADO' }).eq('id', id); 
+            carregarAdmin(); 
+        }
+        
+        async function deletarRecarga(id) { 
+            if(confirm("Excluir pedido definitivamente do banco?")) { 
+                await clientSupabase.from('depositos').delete().eq('id', id); 
+                carregarAdmin(); 
+            } 
+        }
         
         // --- FORMULÁRIO DINÂMICO ---
         function ajustarFormulario() {
@@ -323,17 +361,16 @@
 
         async function injetarEnquete() {
             const cat = document.getElementById('enq-categoria').value; let pf = "";
-            if (cat === "Mercado Financeiro") { pf = `${document.getElementById('enq-ativo').value} [f: ${document.getElementById('enq-fechamento').value} vs ACIMA vs ABAIXO]`; }
+            if (cat === "Mercado Financeiro") { pf = `${document.getElementById('enq-ativo').value} [Ref: ${document.getElementById('enq-fechamento').value} vs ACIMA vs ABAIXO]`; }
             else { pf = `${document.getElementById('enq-pergunta').value} [${document.getElementById('enq-op1').value} vs ${document.getElementById('enq-op2').value}]`; }
-            await clientSupabase.from('enquetes').insert([{ pergunta: pf, categoria: cat }]);
+            await clientSupabase.from('enquetes').insert([{ pergunta: pf, categoria: cat, opcao_1: "1", opcao_2: "2" }]);
             alert("Previsão injetada!"); carregarAdmin();
         }
 
-        // --- SISTEMA DE APURAÇÃO COM LOGICA DE RATEIO DO POTE (POOL) ---
+        // --- APURAÇÃO COM LOGICA DE RATEIO DO POTE (POOL) ---
         async function apurarEnquete(enqueteId, opcaoVencedora) {
             if(!confirm("Tem certeza que deseja encerrar esta enquete com a opção selecionada? O cálculo do rateio será definitivo.")) return;
 
-            // 1. Coleta todas as apostas feitas nesta enquete específica
             const { data: apostas } = await clientSupabase.from('historico_apostas').select('*').eq('enquete_id', enqueteId.toString());
             
             if (apostas && apostas.length > 0) {
@@ -341,7 +378,6 @@
                 let volumeVencedores = 0;
                 let apostasVencedoras = [];
 
-                // 2. Calcula o volume total de dinheiro (pote) e filtra quem acertou
                 apostas.forEach(aposta => {
                     poteTotal += parseFloat(aposta.valor_total);
                     if (aposta.opcao_escolhida === opcaoVencedora.toString()) {
@@ -350,14 +386,11 @@
                     }
                 });
 
-                // 3. Se houver vencedores, faz a distribuição proporcional do prêmio acumulado
                 if (volumeVencedores > 0) {
                     for (const vencedor of apostasVencedoras) {
-                        // Calcula a fatia proporcional do prêmio com base no que ele injetou sozinho
                         let suaProporcao = parseFloat(vencedor.valor_total) / volumeVencedores;
                         let premioFinal = suaProporcao * poteTotal;
 
-                        // Busca o saldo atual do membro para somar o prêmio
                         const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', vencedor.membro_id).maybeSingle();
                         if (m) {
                             let novoSaldo = parseFloat(m.saldo) + premioFinal;
@@ -368,17 +401,15 @@
                     alert("Aviso: Ninguém acertou a previsão! O valor acumulado ficou para a plataforma.");
                 }
 
-                // 4. Limpa o histórico de apostas dessa enquete específica do banco
                 await clientSupabase.from('historico_apostas').delete().eq('enquete_id', enqueteId.toString());
             }
 
-            // 5. Deleta a enquete ativa da lista principal
             await clientSupabase.from('enquetes').delete().eq('id', enqueteId);
             alert("Apuração Concluída e prêmio rateado com sucesso!"); 
             carregarAdmin();
         }
 
-        setInterval(carregarAdmin, 15000);
+        setInterval(carregarAdmin, 10000); // Consulta o banco a cada 10 segundos
         carregarAdmin();
     </script>
 </body>
