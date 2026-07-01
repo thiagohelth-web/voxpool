@@ -1,33 +1,42 @@
 async function solicitarSaque() {
     const inputValor = document.getElementById('input-valor-saque');
     const inputPix = document.getElementById('input-pix-saque');
+    
     if (!inputValor || !inputPix) {
         alert("Erro no formulário: Campos não encontrados.");
         return;
     }
+
     const valorSaque = parseFloat(inputValor.value);
     const pix = inputPix.value;
     const usuarioId = String(localStorage.getItem('vox_usuario')).trim();
+
     if (!valorSaque || isNaN(valorSaque) || valorSaque <= 0) {
         alert("Valor inválido.");
         return;
     }
+
     try {
         const { data: membro, error: fetchError } = await clientSupabase
             .from('membros')
             .select('id, saldo')
             .eq('id', usuarioId)
             .maybeSingle();
+
         if (fetchError || !membro) {
             alert("Erro: Usuário não localizado.");
             return;
         }
+
         const saldoAtual = parseFloat(membro.saldo || 0);
+
         if (saldoAtual < valorSaque) {
             alert("Saldo insuficiente.");
             return;
         }
+
         const novoSaldo = saldoAtual - valorSaque;
+
         const { error: insertError } = await clientSupabase
             .from('saques')
             .insert([{ 
@@ -36,16 +45,21 @@ async function solicitarSaque() {
                 chave_pix: pix, 
                 status: 'PENDENTE' 
             }]);
+
         if (insertError) throw insertError;
+
         const { error: updateError } = await clientSupabase
             .from('membros')
             .update({ saldo: novoSaldo })
             .eq('id', usuarioId);
+
         if (updateError) throw updateError;
-        alert("Sucesso! Saque solicitado e saldo atualizado.");
+
+        alert("Sucesso! Saque solicitado.");
         location.reload();
+
     } catch (err) {
         console.error("Erro técnico:", err);
-        alert("Ocorreu um erro técnico. Verifique o console F12.");
+        alert("Ocorreu um erro técnico.");
     }
 }
