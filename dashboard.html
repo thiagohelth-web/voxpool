@@ -1,15 +1,17 @@
 async function solicitarSaque() {
+    // 1. Coleta de dados
     const valorSaque = parseFloat(document.getElementById('input-valor-saque').value);
     const pix = document.getElementById('input-pix-saque').value;
     const usuarioId = String(localStorage.getItem('vox_usuario')).trim();
 
+    // 2. Validações básicas
     if (!valorSaque || isNaN(valorSaque) || valorSaque <= 0) {
         alert("Valor inválido.");
         return;
     }
 
     try {
-        // 1. Busca o membro
+        // 3. Busca o membro no banco
         const { data: membro, error: fetchError } = await clientSupabase
             .from('membros')
             .select('id, saldo')
@@ -17,7 +19,7 @@ async function solicitarSaque() {
             .maybeSingle();
 
         if (fetchError || !membro) {
-            alert("Erro: Usuário não localizado no sistema.");
+            alert("Erro: Usuário não localizado.");
             return;
         }
 
@@ -28,29 +30,31 @@ async function solicitarSaque() {
             return;
         }
 
-        // 2. Insere pedido de saque
-        await clientSupabase.from('saques').insert([
-            { membro_id: usuarioId, moedas_sacar: valorSaque, chave_pix: pix, status: 'PENDENTE' }
-        ]);
+        // 4. Insere o pedido na tabela 'saques'
+        const { error: insertError } = await clientSupabase
+            .from('saques')
+            .insert([{ 
+                membro_id: usuarioId, 
+                moedas_sacar: valorSaque, 
+                chave_pix: pix, 
+                status: 'PENDENTE' 
+            }]);
 
-        // 3. ATUALIZAÇÃO FORÇADA
-        // Se a coluna no banco for 'saldo', o comando abaixo deve funcionar.
-        // Se você não tiver certeza absoluta do nome da coluna, verifique no painel do Supabase.
+        if (insertError) throw insertError;
+
+        // 5. Atualiza o saldo do membro
         const { error: updateError } = await clientSupabase
             .from('membros')
             .update({ saldo: (saldoAtual - valorSaque) })
-            .match({ id: usuarioId }); // Usamos .match para garantir segurança na seleção
+            .eq('id', usuarioId);
 
-        if (updateError) {
-            console.error("Erro no update:", updateError);
-            alert("Erro ao debitar saldo. Veja o console F12.");
-            return;
-        }
+        if (updateError) throw updateError;
 
         alert("Sucesso! Saque solicitado.");
         location.reload();
 
     } catch (err) {
-        console.error(err);
+        console.error("Erro na função solicitarSaque:", err);
+        alert("Ocorreu um erro técnico. Verifique o console F12.");
     }
 }
