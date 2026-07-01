@@ -1,82 +1,129 @@
-// --- APURAÇÃO COM LOGICA DE RATEIO DO POTE (POOL) OTIMIZADA ---
-async function apurarEnquete(enqueteId, opcaoVencedora) {
-    if(!confirm("Tem certeza que deseja encerrar esta enquete com a opção selecionada? O cálculo do rateio será definitivo.")) return;
-
-    try {
-        // Garante que o ID seja tratado corretamente (ajuste se seu ID for UUID)
-        const idBusca = isNaN(enqueteId) ? enqueteId : parseInt(enqueteId);
-
-        // 1. Busca todas as apostas da enquete
-        const { data: apostas, error: errApostas } = await clientSupabase
-            .from('historico_apostas')
-            .select('*')
-            .eq('enquete_id', idBusca);
-
-        if (errApostas) throw errApostas;
-        
-        if (apostas && apostas.length > 0) {
-            let poteTotal = 0;
-            let volumeVencedores = 0;
-            let apostasVencedoras = [];
-
-            // Calcula volumes
-            apostas.forEach(aposta => {
-                const valor = parseFloat(aposta.valor_total || 0);
-                poteTotal += valor;
-                if (aposta.opcao_escolhida?.toString() === opcaoVencedora.toString()) {
-                    volumeVencedores += valor;
-                    apostasVencedoras.push(aposta);
-                }
-            });
-
-            if (volumeVencedores > 0) {
-                // Otimização: Coleta os saldos de TODOS os vencedores de uma só vez para evitar loops infinitos de SELECT
-                const IDsVencedores = apostasVencedoras.map(v => v.membro_id);
-                const { data: membros, error: errMembros } = await clientSupabase
-                    .from('membros')
-                    .select('id, saldo')
-                    .in('id', IDsVencedores);
-
-                if (errMembros) throw errMembros;
-
-                // Cria um mapa de saldos para acesso rápido O(1)
-                const saldoMapa = {};
-                membros.forEach(m => { saldoMapa[m.id] = parseFloat(m.saldo || 0); });
-
-                // Executa as atualizações em paralelo usando Promise.all
-                const promessasPagamento = apostasVencedoras.map(async (vencedor) => {
-                    let suaProporcao = parseFloat(vencedor.valor_total) / volumeVencedores;
-                    let premioFinal = suaProporcao * poteTotal;
-                    
-                    let saldoAtual = saldoMapa[vencedor.membro_id];
-                    if (saldoAtual !== undefined) {
-                        let novoSaldo = saldoAtual + premioFinal;
-                        return clientSupabase
-                            .from('membros')
-                            .update({ saldo: novoSaldo })
-                            .eq('id', vencedor.membro_id);
+async function carregarAdmin() {
+            try {
+                // 1. LISTAR RECARGAS (Lendo da tabela 'depositos')
+                const { data: recargas } = await clientSupabase.from('depositos').select('*');
+                const tRecargas = document.getElementById('tabela-recargas');
+                tRecargas.innerHTML = "";
+                
+                if (!recargas || recargas.length === 0) {
+                    tRecargas.innerHTML = "<tr><td colspan='5' style='color:gray; padding:10px; text-align:center;'>Nenhum depósito pendente.</td></tr>";
+                } else {
+                    recargas.forEach(rec => {
+                        if(rec.status !== 'APROVADO') {
+                            // Ajustado para usar as colunas exatas do banco: valor_rs e membro_id
+                            const val = parseFloat(rec.valor_rs || 0);
+                            const idMembro = rec.membro_id || "Sem Identificação";
+                            let cl = ""; let st = "";
+                            
+                            if (rec.status === "PENDENTE" || rec.status === "Pendente" || rec.status === "envio_confirmado_usuario") { 
+                                cl = "class='linha-paga'"; 
+                                st = `<span class="status-badge" style="background:var(--accent-green);color:black;">💰 PIX ENVIADO</span>`; 
+                            } else if (rec.status === "RECUSADO" || rec.status === "pix_nao_recebido") { 
+                                cl = "class='linha-recusada'"; 
+                                st = `<span class="status-badge" style="background:var(--accent-red);color:white;">❌ ERRO NOTIFICADO</span>`; 
+                            } else { 
+                                st = `<span class="status-badge" style="background:#4b5563">⏳ AGUARDANDO</span>`; 
+                            }
+                            
+                            tRecargas.innerHTML += `<tr ${cl}>
+                                <td><b>${idMembro}</b><br><small style="color:gray;">Ref: ${rec.comprovante || 'Nenhum'}</small></td>
+                                <td>${val.toFixed(2)}</td>
+                                <td>R$ ${val.toFixed(2)}</td>
+                                <td>${st}</td>
+                                <td>
+                                    <button class="btn-resolver" onclick="aprovarRecarga('${rec.id}','${idMembro}',${val})">Liberar Saldo</button>
+                                    <button class="btn-recusar" onclick="notificarNaoRecebido('${rec.id}')">Avisar Erro</button>
+                                    <button class="btn-del" onclick="deletarRecarga('${rec.id}')">X</button>
+                                </td>
+                            </tr>`;
+                        }
+                    });
+                    if(tRecargas.innerHTML === "") {
+                        tRecargas.innerHTML = "<tr><td colspan='5' style='color:gray; padding:10px; text-align:center;'>Todos os depósitos foram processados!</td></tr>";
                     }
-                });
+                }
 
-                // Aguarda todos os saldos serem atualizados
-                await Promise.all(promessasPagamento);
+                // 2. LISTAR PEDIDOS DE SAQUE (Lendo da tabela 'saques')
+                const { data: saques } = await clientSupabase.from('saques').select('*').or('status.eq.PENDENTE,status.eq.Pendente');
+                const tSaques = document.getElementById('tabela-saques');
+                tSaques.innerHTML = "";
+                
+                if(!saques || saques.length === 0) {
+                    tSaques.innerHTML = "<tr><td colspan='4' style='color:gray;padding:10px;text-align:center;'>Nenhum pedido de saque pendente.</td></tr>";
+                } else {
+                    saques.forEach(saq => {
+                        // Ajustado para usar as colunas exatas do banco: membro_id e moedas_sacar
+                        const idMembroSaque = saq.membro_id;
+                        const moedasSacar = parseFloat(saq.moedas_sacar || 0);
+                        tSaques.innerHTML += `<tr>
+                            <td><b>${idMembroSaque}</b></td>
+                            <td style="color:var(--accent-red); font-weight:bold;">${moedasSacar.toFixed(2)} Moedas</td>
+                            <td><code style="background:#1f2937; padding:4px 8px; border-radius:4px; color:#60a5fa;">${saq.chave_pix}</code></td>
+                            <td>
+                                <button class="btn-resolver" onclick="finalizarSaque('${saq.id}', 'FINALIZADO')">✅ Já fiz o PIX (Concluir)</button>
+                                <button class="btn-del" onclick="finalizarSaque('${saq.id}', 'RECUSADO_ESTORNADO', '${idMembroSaque}', ${moedasSacar})">❌ Recusar/Devolver</button>
+                            </td>
+                        </tr>`;
+                    });
+                }
 
-            } else {
-                alert("Aviso: Ninguém acertou a previsão! O valor acumulado ficou para a plataforma.");
-            }
+                // 3. GERENCIADOR DE MEMBROS COMPLETO
+                const { data: membros } = await clientSupabase.from('membros').select('*');
+                const tMembros = document.getElementById('tabela-membros-geral');
+                tMembros.innerHTML = "";
+                if(membros) {
+                    membros.forEach(m => {
+                        let statusStyle = m.status === 'bloqueado' ? 'background:var(--accent-red); color:white;' : 'background:var(--accent-green); color:black;';
+                        tMembros.innerHTML += `<tr>
+                            <td><b>${m.id}</b></td>
+                            <td><small>${m.chave_pix || 'Não cadastrada'}</small></td>
+                            <td style="color:var(--accent-green); font-weight:bold;">${parseFloat(m.saldo || 0).toFixed(2)}</td>
+                            <td><span class="status-badge" style="${statusStyle}">${m.status ? m.status.toUpperCase() : 'ATIVO'}</span></td>
+                            <td>
+                                <button class="btn-resolver" style="background:#3b82f6" onclick="ajustarSaldoManual('${m.id}', ${m.saldo})">✏️ Saldo</button>
+                                ${m.status === 'bloqueado' ? 
+                                    `<button class="btn-resolver" onclick="alterarStatusMembro('${m.id}', 'ativo')">🔓 Ativar</button>` : 
+                                    `<button class="btn-recusar" onclick="alterarStatusMembro('${m.id}', 'bloqueado')">🔒 Bloquear</button>`
+                                }
+                                <button class="btn-del" onclick="deletarMembroConta('${m.id}')">Excluir</button>
+                            </td>
+                        </tr>`;
+                    });
+                }
 
-            // Deleta o histórico de apostas apenas DEPOIS que todos receberam
-            await clientSupabase.from('historico_apostas').delete().eq('enquete_id', idBusca);
+                // 4. LISTAR ENQUETES PARA APURAÇÃO
+                const { data: enquetes } = await clientSupabase.from('enquetes').select('*');
+                const tabela = document.getElementById('tabela-enquetes'); tabela.innerHTML = "";
+                if(enquetes && enquetes.length > 0) {
+                    enquetes.forEach(enq => {
+                        let o1 = "Opção 1", o2 = "Opção 2"; let ex = enq.pergunta;
+                        
+                        if (enq.categoria === "Mercado Financeiro") {
+                            o1 = "ACIMA"; o2 = "ABAIXO";
+                            try { if (enq.pergunta.includes(" vs ")) { ex = enq.pergunta.split(" vs ")[0] + "]"; } } catch(e){}
+                        } else {
+                            if (enq.pergunta.includes("[") && enq.pergunta.includes("vs")) {
+                                try { 
+                                    const partes = enq.pergunta.split(" ["); 
+                                    ex = partes[0]; 
+                                    const opcoesRaw = partes[1].replace("]", "").split(" vs "); 
+                                    o1 = opcoesRaw[0]; o2 = opcoesRaw[1]; 
+                                } catch(e){}
+                            }
+                        }
+
+                        tabela.innerHTML += `<tr>
+                            <td><span class="badge">${enq.categoria}</span></td>
+                            <td><b>${ex}</b></td>
+                            <td>1: ${o1}<br>2: ${o2}</td>
+                            <td>
+                                <button class="btn-resolver" onclick="apurarEnquete('${enq.id}', '1')">${o1}</button>
+                                <button class="btn-resolver" onclick="apurarEnquete('${enq.id}', '2')" style="background:#3b82f6;">${o2}</button>
+                            </td>
+                        </tr>`;
+                    });
+                } else {
+                    tabela.innerHTML = "<tr><td colspan='4' style='color:gray; padding:10px; text-align:center;'>Nenhuma previsão ativa no momento.</td></tr>";
+                }
+            } catch(e) { console.error("Erro ao carregar dados do admin:", e); }
         }
-
-        // Remove a enquete ativa do painel
-        await clientSupabase.from('enquetes').delete().eq('id', idBusca);
-        
-        alert("Apuração Concluída e prêmio rateado com sucesso!"); 
-        carregarAdmin();
-
-    } catch (error) {
-        console.error("Erro na apuração:", error);
-        alert("Ocorreu um erro ao processar a apuração. Verifique o console.");
-    }
-}
