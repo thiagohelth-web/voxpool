@@ -34,6 +34,12 @@
         .input-fin { width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; color: white; margin-bottom: 10px; margin-top: 5px; }
         .btn-acao-fin { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         
+        /* Box de Copiar Chave */
+        .pix-copy-box { display: flex; gap: 10px; margin-bottom: 15px; background: var(--bg-main); padding: 8px; border-radius: 6px; border: 1px dashed var(--accent-green); align-items: center; }
+        .pix-key-text { font-size: 12px; color: #10b981; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+        .btn-copy { background: #2563eb; color: white; border: none; padding: 5px 10px; font-size: 11px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-copy:hover { background: #3b82f6; }
+
         .tabs { max-width: 800px; margin: 0 auto 25px auto; display: flex; gap: 15px; }
         .tab-btn { flex: 1; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-color); color: white; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
         .tab-btn.active { background: var(--primary-blue); border-color: #60a5fa; }
@@ -69,13 +75,19 @@
         </div>
 
         <div id="painel-deposito" class="painel-fin">
-            <h3>🟢 Notificar Depósito</h3>
-            <p style="font-size: 13px; color: #9ca3af; margin-bottom: 8px;">Realize o PIX para a chave da plataforma e informe os dados abaixo para validação do ADM:</p>
-            <label style="font-size:12px; color:gray;">Valor Transferido (R$):</label>
+            <h3>🟢 Adicionar Saldo via PIX</h3>
+            <p style="font-size: 13px; color: #9ca3af; margin-bottom: 12px;">Copie a chave aleatória abaixo e pague o valor desejado no aplicativo do seu banco:</p>
+            
+            <div class="pix-copy-box">
+                <span class="pix-key-text" id="chave-pix-vox">ef0ce40a-5e1e-42ef-a2b6-a2d3664491bd</span>
+                <button class="btn-copy" onclick="copiarChavePixAleatoria()">Copiar</button>
+            </div>
+
+            <label style="font-size:12px; color:gray;">Valor Pago (R$):</label>
             <input type="number" id="dep-valor" class="input-fin" placeholder="Ex: 50.00" min="1">
-            <label style="font-size:12px; color:gray;">Código ID da Transação / Comprovante:</label>
-            <input type="text" id="dep-id" class="input-fin" placeholder="Cole o ID do PIX ou número do comprovante">
-            <button class="btn-acao-fin" style="background: var(--accent-green); color: black;" onclick="enviarNotificacaoDeposito()">Notificar Administração</button>
+            <label style="font-size:12px; color:gray;">Seu Nome / Código de Confirmação do PIX:</label>
+            <input type="text" id="dep-id" class="input-fin" placeholder="Informe algo para ajudar o ADM a te identificar">
+            <button class="btn-acao-fin" style="background: var(--accent-green); color: black;" onclick="enviarNotificacaoDeposito()">Confirmei o Pagamento</button>
         </div>
 
         <div id="painel-saque" class="painel-fin">
@@ -113,11 +125,17 @@
             window.location.href = 'index.html';
         }
 
-        // Controla abertura e fechamento das abas de Depósito/Saque (Efeito Sanfona)
+        // Função rápida para copiar a chave PIX do administrador
+        function copiarChavePixAleatoria() {
+            const txtChave = document.getElementById('chave-pix-vox').innerText;
+            navigator.clipboard.writeText(txtChave).then(() => {
+                alert("Chave PIX copiada com sucesso! Vá ao app do seu banco e pague na opção PIX Copia e Cola.");
+            }).catch(err => { console.error("Erro ao copiar", err); });
+        }
+
         function alternarAbasFinanceiras(tipo) {
             const pDep = document.getElementById('painel-deposito');
             const pSaq = document.getElementById('painel-saque');
-
             if(tipo === 'deposito') {
                 pSaq.style.display = 'none';
                 pDep.style.display = pDep.style.display === 'block' ? 'none' : 'block';
@@ -127,63 +145,60 @@
             }
         }
 
-        // Envia Notificação de Depósito PIX para o Banco
         async function enviarNotificacaoDeposito() {
             const valor = document.getElementById('dep-valor').value;
             const refId = document.getElementById('dep-id').value;
 
             if(!valor || parseFloat(valor) <= 0 || !refId.trim()) {
-                alert("Preencha todos os campos do depósito corretamente!"); return;
+                alert("Por favor, preencha o valor e a identificação do pagamento!"); return;
             }
 
             const { error } = await clientSupabase.from('solicitacoes_financeiras').insert([{
                 membro_id: usuarioLogado,
                 tipo: 'DEPOSITO',
                 valor: parseFloat(valor),
-                detalhes: `ID Transação: ${refId}`,
+                detalhes: `Comprovante/Ref: ${refId}`,
                 status: 'PENDENTE'
             }]);
 
             if(!error) {
-                alert("Notificação enviada com sucesso! O administrador revisará o comprovante para liberar seu saldo.");
+                alert("O Administrador foi notificado! Aguarde a verificação bancária para a liberação dos seus créditos.");
                 document.getElementById('dep-valor').value = "";
                 document.getElementById('dep-id').value = "";
                 document.getElementById('painel-deposito').style.display = 'none';
-            } else { alert("Erro ao enviar notificação. Tente novamente."); }
+            } else { alert("Ocorreu uma falha na comunicação. Tente novamente."); }
         }
 
-        // Envia Solicitação de Saque para o Banco
         async function enviarSolicitacaoSaque() {
             const valor = document.getElementById('saq-valor').value;
             const chavePix = document.getElementById('saq-chave').value;
 
             if(!valor || parseFloat(valor) <= 0 || !chavePix.trim()) {
-                alert("Preencha todos os campos do saque corretamente!"); return;
+                alert("Preencha as informações de saque corretamente!"); return;
             }
 
             const valorSaque = parseFloat(valor);
 
-            // Verifica se o usuário tem saldo real disponível antes de solicitar
             const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', usuarioLogado).maybeSingle();
             if(!m || parseFloat(m.saldo) < valorSaque) {
-                alert("Você não possui saldo suficiente para solicitar este saque!"); return;
+                alert("Saldo indisponível para realizar esta retirada!"); return;
             }
 
             const { error } = await clientSupabase.from('solicitacoes_financeiras').insert([{
                 membro_id: usuarioLogado,
                 tipo: 'SAQUE',
                 valor: valorSaque,
-                detalhes: `Chave PIX: ${chavePix}`,
+                detalhes: `Chave PIX Destino: ${chavePix}`,
                 status: 'PENDENTE'
             }]);
 
             if(!error) {
-                alert("Solicitação de saque registrada! O valor foi retido para análise e o PIX será enviado em breve pelo ADM.");
+                alert("Pedido de saque enviado com sucesso! O administrador processará a sua transferência.");
                 document.getElementById('saq-valor').value = "";
                 document.getElementById('saq-chave').value = "";
                 document.getElementById('painel-saque').style.display = 'none';
                 carregarPainel();
-            } else { alert("Erro ao registrar saque. Tente novamente."); }
+            } else { alert("Erro ao processar a solicitação de saque."); }
         }
 
         function formatarDataHora(timestampBanco) {
@@ -200,7 +215,7 @@
                 if(m) { document.getElementById('txt-saldo').innerText = parseFloat(m.saldo).toFixed(2); }
 
                 let { data: enquetes, error } = await clientSupabase.from('enquetes').select('*').eq('categoria', abaAtual);
-                if (error) { console.error(error); return; }
+                if (error) return;
 
                 const container = document.getElementById('lista-enquetes');
                 container.innerHTML = "";
