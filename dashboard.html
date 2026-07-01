@@ -1,17 +1,14 @@
 async function solicitarSaque() {
-    // 1. Coleta de dados
     const valorSaque = parseFloat(document.getElementById('input-valor-saque').value);
     const pix = document.getElementById('input-pix-saque').value;
     const usuarioId = String(localStorage.getItem('vox_usuario')).trim();
 
-    // 2. Validações básicas
     if (!valorSaque || isNaN(valorSaque) || valorSaque <= 0) {
         alert("Valor inválido.");
         return;
     }
 
     try {
-        // 3. Busca o membro no banco
         const { data: membro, error: fetchError } = await clientSupabase
             .from('membros')
             .select('id, saldo')
@@ -24,13 +21,11 @@ async function solicitarSaque() {
         }
 
         const saldoAtual = parseFloat(membro.saldo || 0);
-
         if (saldoAtual < valorSaque) {
             alert("Saldo insuficiente.");
             return;
         }
 
-        // 4. Insere o pedido na tabela 'saques'
         const { error: insertError } = await clientSupabase
             .from('saques')
             .insert([{ 
@@ -42,7 +37,6 @@ async function solicitarSaque() {
 
         if (insertError) throw insertError;
 
-        // 5. Atualiza o saldo do membro
         const { error: updateError } = await clientSupabase
             .from('membros')
             .update({ saldo: (saldoAtual - valorSaque) })
@@ -54,7 +48,7 @@ async function solicitarSaque() {
         location.reload();
 
     } catch (err) {
-        console.error("Erro na função solicitarSaque:", err);
+        console.error("Erro técnico:", err);
         alert("Ocorreu um erro técnico. Verifique o console F12.");
     }
 }
