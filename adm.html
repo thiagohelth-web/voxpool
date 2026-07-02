@@ -2,441 +2,87 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VoxPopuli - ADM Central</title>
-    <style>
-        :root {
-            --bg-main: #0b0f19; --bg-card: #111827; --bg-input: #1f2937;
-            --primary-blue: #2563eb; --accent-red: #ef4444; --accent-green: #10b981;
-            --text-main: #f3f4f6; --border-color: #374151;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); padding: 20px; }
-        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 30px; }
-        .logo { font-size: 24px; font-weight: bold; color: #3b82f6; }
-        .btn-sair { background: #374151; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-        .secao-adm { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; margin-bottom: 25px; }
-        h3 { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-        .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
-        input, select { flex: 1; min-width: 150px; padding: 12px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; color: white; font-size: 14px; }
-        .btn-adm { width: 100%; padding: 12px; background: var(--primary-blue); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border-bottom: 1px solid var(--border-color); padding: 12px; text-align: left; }
-        .btn-resolver { background: var(--accent-green); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
-        .btn-recusar { background: #d97706; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
-        .btn-del { background: var(--accent-red); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #374151; }
-        .linha-paga { background: rgba(16, 185, 129, 0.12) !important; }
-        .linha-recusada { background: rgba(239, 68, 68, 0.12) !important; }
-        .status-badge { padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-    </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg-main: #0b0f19; --bg-card: #111827; --primary-blue: #2563eb; --accent-green: #10b981; --accent-red: #ef4444; }
+        body { background-color: var(--bg-main); color: #f3f4f6; font-family: sans-serif; padding: 20px; }
+        .secao-adm { background: var(--bg-card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #374151; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; border-bottom: 1px solid #374151; text-align: left; }
+        button { cursor: pointer; padding: 6px 12px; border-radius: 4px; border: none; color: white; }
+    </style>
 </head>
 <body>
-
-    <header>
-        <div class="logo">VoxPopuli Central [ADM]</div>
-        <button class="btn-sair" onclick="deslogar()">Sair</button>
-    </header>
-
+    <header><h1>VoxPopuli Central [ADM]</h1></header>
     <div style="max-width: 1100px; margin: 0 auto;">
         
-        <div class="secao-adm" style="border-color: var(--accent-green);">
-            <h3 style="color: var(--accent-green);">💰 Aprovação de Depósitos (Recargas)</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Membro</th>
-                        <th>Valor R$</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-recargas">
-                    <tr><td colspan="4" style="color:gray; padding:15px; text-align:center;">Buscando depósitos no banco...</td></tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="secao-adm" style="border-color: #d97706;">
-            <h3 style="color: #f59e0b;">📤 Pedidos de Saque dos Clientes</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Membro</th>
-                        <th>Moedas à Sacar</th>
-                        <th>Chave PIX do Cliente</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-saques">
-                    <tr><td colspan="4" style="color:gray; padding:15px; text-align:center;">Buscando saques pendentes...</td></tr>
-                </tbody>
-            </table>
-        </div>
-        
         <div class="secao-adm">
-            <h3>📝 Injetar Nova Previsão por Categoria</h3>
-            <div class="form-row">
-                <select id="enq-categoria" onchange="ajustarFormulario()">
-                    <option value="Mercado Financeiro">📈 Mercado Financeiro</option>
-                    <option value="Esporte">⚽ Esporte</option>
-                </select>
-            </div>
-            <div class="form-row" id="campos-dinamicos">
-                <select id="enq-ativo">
-                    <option value="" disabled selected>Escolha o Ativo...</option>
-                    <option value="WIN1!">📉 Índice WIN (Ibovespa)</option>
-                    <option value="WDO1!">💵 Dólar WDO</option>
-                    <option value="BTCUSD">🪙 BITCOIN (Cripto)</option>
-                    <option value="GOLD">🏆 GOLD (Ouro)</option>
-                    <option value="EURUSD">💱 EUR/USD (Forex)</option>
-                    <option value="MXRF11">🏢 MXRF11 (FII)</option>
-                    <option value="HGLG11">🏢 HGLG11 (FII)</option>
-                    <option value="XPML11">🏢 XPML11 (FII)</option>
-                </select>
-                <input type="text" id="enq-fechamento" placeholder="Preço de Ontem (Ex: 125300)">
-            </div>
-            <button class="btn-adm" onclick="injetarEnquete()">Injetar Previsão</button>
+            <h3>💰 Aprovação de Depósitos</h3>
+            <table id="tabela-recargas"></table>
         </div>
 
-        <div class="secao-adm" style="border-color: var(--primary-blue);">
-            <h3 style="color: #60a5fa;">🎲 Encerramento e Apuração (Sistema de Rateio)</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Categoria</th>
-                        <th>Previsão</th>
-                        <th>Referência / Opções</th>
-                        <th>Definir Vencedor</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-enquetes"></tbody>
-            </table>
+        <div class="secao-adm">
+            <h3>📤 Pedidos de Saque</h3>
+            <table id="tabela-saques"></table>
         </div>
 
-        <div class="secao-adm" style="border-color: #6b7280;">
-            <h3 style="color: #9ca3af;">👥 Controle Geral de Membros Cadastrados</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Usuário / ID</th>
-                        <th>Chave PIX</th>
-                        <th>Saldo Atual</th>
-                        <th>Status da Conta</th>
-                        <th>Ações Gerenciais</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-membros-geral"></tbody>
-            </table>
+        <div class="secao-adm">
+            <h3>📝 Injetar Nova Previsão</h3>
+            <select id="enq-categoria" onchange="ajustarFormulario()">
+                <option value="Mercado Financeiro">📈 Mercado Financeiro</option>
+                <option value="Esporte">⚽ Esporte</option>
+            </select>
+            <div id="campos-dinamicos" style="margin: 10px 0;"></div>
+            <button class="btn-adm" onclick="injetarEnquete()" style="background:var(--primary-blue)">Injetar</button>
         </div>
-
     </div>
 
     <script>
         const SUPABASE_URL = "https://xxxzluqjgqwkpzjjxpbj.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4eHpsdXFqZ3F3a3B6amp4cGJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2MTA2NjcsImV4cCI6MjA5ODE4NjY2N30.VzGPY5L8EhKt7-ARJaShpM6mMl8kA2tlRG_S4dtUPzc";
-        const clientSupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        function deslogar() { localStorage.removeItem('vox_usuario'); window.location.href = 'index.html'; }
+        const SUPABASE_KEY = "SUA_CHAVE_ANON_AQUI"; 
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function carregarAdmin() {
-            try {
-                // 1. LISTAR RECARGAS (Lendo da tabela 'depositos')
-                const { data: recargas } = await clientSupabase.from('depositos').select('*');
-                const tRecargas = document.getElementById('tabela-recargas');
-                tRecargas.innerHTML = "";
-                
-                if (!recargas || recargas.length === 0) {
-                    tRecargas.innerHTML = "<tr><td colspan='4' style='color:gray; padding:10px; text-align:center;'>Nenhum depósito pendente.</td></tr>";
-                } else {
-                    recargas.forEach(rec => {
-                        if(rec.status !== 'APROVADO') {
-                            const val = parseFloat(rec.valor_rs || rec.valor || rec.moedas || 0);
-                            const idMembro = rec.membro_id || "Sem Identificação";
-                            let cl = ""; let st = "";
-                            
-                            if (rec.status === "PENDENTE" || rec.status === "Pendente" || rec.status === "envio_confirmado_usuario") { 
-                                cl = "class='linha-paga'"; 
-                                st = `<span class="status-badge" style="background:var(--accent-green);color:black;">💰 PIX ENVIADO</span>`; 
-                            } else if (rec.status === "RECUSADO" || rec.status === "pix_nao_recebido") { 
-                                cl = "class='linha-recusada'"; 
-                                st = `<span class="status-badge" style="background:var(--accent-red);color:white;">❌ ERRO NOTIFICADO</span>`; 
-                            } else { 
-                                st = `<span class="status-badge" style="background:#4b5563">⏳ AGUARDANDO</span>`; 
-                            }
-                            
-                            tRecargas.innerHTML += `<tr ${cl}>
-                                <td><b>${idMembro}</b><br><small style="color:gray;">Ref: ${rec.comprovante || 'Nenhum'}</small></td>
-                                <td>R$ ${val.toFixed(2)}</td>
-                                <td>${st}</td>
-                                <td>
-                                    <button class="btn-resolver" onclick="aprovarRecarga('${rec.id}','${idMembro}',${val})">Liberar Saldo</button>
-                                    <button class="btn-recusar" onclick="notificarNaoRecebido('${rec.id}')">Avisar Erro</button>
-                                    <button class="btn-del" onclick="deletarRecarga('${rec.id}')">X</button>
-                                </td>
-                            </tr>`;
-                        }
-                    });
-                    if(tRecargas.innerHTML === "") {
-                        tRecargas.innerHTML = "<tr><td colspan='4' style='color:gray; padding:10px; text-align:center;'>Todos os depósitos foram processados!</td></tr>";
-                    }
-                }
+            // 1. Carregar Depósitos
+            const { data: recargas } = await supabase.from('depositos').select('*');
+            const tRec = document.getElementById('tabela-recargas');
+            tRec.innerHTML = recargas ? recargas.map(r => `
+                <tr>
+                    <td>${r.membro_id || 'N/A'}</td>
+                    <td>${r.valor}</td>
+                    <td><button onclick="aprovarRecarga('${r.id}', '${r.membro_id}', ${r.valor})">Aprovar</button></td>
+                </tr>
+            `).join('') : '<tr><td>Nenhum</td></tr>';
 
-                // 2. LISTAR PEDIDOS DE SAQUE (Lendo da tabela 'saques' de forma ampla)
-                const { data: saques } = await clientSupabase.from('saques').select('*');
-                const tSaques = document.getElementById('tabela-saques');
-                tSaques.innerHTML = "";
-                
-                let temSaquePendente = false;
-
-                if (saques && saques.length > 0) {
-                    saques.forEach(saq => {
-                        // Converte o status para maiúsculo para comparar sem erros de digitação
-                        const statusNormalizado = saq.status ? saq.status.toUpperCase() : "PENDENTE";
-                        
-                        // Exibe se estiver pendente ou aguardando análise
-                        if (statusNormalizado === "PENDENTE" || statusNormalizado === "AGUARDANDO" || statusNormalizado === "" || statusNormalizado === "PENDING") {
-                            temSaquePendente = true;
-                            const idMembroSaque = saq.membro_id || "Sem Identificação";
-                            const moedasSacar = parseFloat(saq.moedas_sacar || saq.moedas || saq.valor || 0);
-                            const chavePixCliente = saq.chave_pix || saq.pix || "Não Informada";
-                            
-                            tSaques.innerHTML += `<tr>
-                                <td><b>${idMembroSaque}</b></td>
-                                <td style="color:var(--accent-red); font-weight:bold;">${moedasSacar.toFixed(2)} Moedas</td>
-                                <td><code style="background:#1f2937; padding:4px 8px; border-radius:4px; color:#60a5fa;">${chavePixCliente}</code></td>
-                                <td>
-                                    <button class="btn-resolver" onclick="finalizarSaque('${saq.id}', 'FINALIZADO')">✅ Já fiz o PIX (Concluir)</button>
-                                    <button class="btn-del" onclick="finalizarSaque('${saq.id}', 'RECUSADO_ESTORNADO', '${idMembroSaque}', ${moedasSacar})">❌ Recusar/Devolver</button>
-                                </td>
-                            </tr>`;
-                        }
-                    });
-                }
-
-                if (!temSaquePendente) {
-                    tSaques.innerHTML = "<tr><td colspan='4' style='color:gray;padding:10px;text-align:center;'>Nenhum pedido de saque pendente.</td></tr>";
-                }
-
-                // 3. GERENCIADOR DE MEMBROS COMPLETO
-                const { data: membros } = await clientSupabase.from('membros').select('*');
-                const tMembros = document.getElementById('tabela-membros-geral');
-                tMembros.innerHTML = "";
-                if(membros) {
-                    membros.forEach(m => {
-                        let statusStyle = m.status === 'bloqueado' ? 'background:var(--accent-red); color:white;' : 'background:var(--accent-green); color:black;';
-                        tMembros.innerHTML += `<tr>
-                            <td><b>${m.id}</b></td>
-                            <td><small>${m.chave_pix || 'Não cadastrada'}</small></td>
-                            <td style="color:var(--accent-green); font-weight:bold;">${parseFloat(m.saldo || 0).toFixed(2)}</td>
-                            <td><span class="status-badge" style="${statusStyle}">${m.status ? m.status.toUpperCase() : 'ATIVO'}</span></td>
-                            <td>
-                                <button class="btn-resolver" style="background:#3b82f6" onclick="ajustarSaldoManual('${m.id}', ${m.saldo})">✏️ Saldo</button>
-                                ${m.status === 'bloqueado' ? 
-                                    `<button class="btn-resolver" onclick="alterarStatusMembro('${m.id}', 'ativo')">🔓 Ativar</button>` : 
-                                    `<button class="btn-recusar" onclick="alterarStatusMembro('${m.id}', 'bloqueado')">🔒 Bloquear</button>`
-                                }
-                                <button class="btn-del" onclick="deletarMembroConta('${m.id}')">Excluir</button>
-                            </td>
-                        </tr>`;
-                    });
-                }
-
-                // 4. LISTAR ENQUETES PARA APURAÇÃO
-                const { data: enquetes } = await clientSupabase.from('enquetes').select('*');
-                const tabela = document.getElementById('tabela-enquetes'); tabela.innerHTML = "";
-                if(enquetes && enquetes.length > 0) {
-                    enquetes.forEach(enq => {
-                        let o1 = "Opção 1", o2 = "Opção 2"; let ex = enq.pergunta;
-                        
-                        if (enq.categoria === "Mercado Financeiro") {
-                            o1 = "ACIMA"; o2 = "ABAIXO";
-                            try { if (enq.pergunta.includes(" vs ")) { ex = enq.pergunta.split(" vs ")[0] + "]"; } } catch(e){}
-                        } else {
-                            if (enq.pergunta.includes("[") && enq.pergunta.includes("vs")) {
-                                try { 
-                                    const partes = enq.pergunta.split(" ["); 
-                                    ex = partes[0]; 
-                                    const opcoesRaw = partes[1].replace("]", "").split(" vs "); 
-                                    o1 = opcoesRaw[0]; o2 = opcoesRaw[1]; 
-                                } catch(e){}
-                            }
-                        }
-
-                        tabela.innerHTML += `<tr>
-                            <td><span class="badge">${enq.categoria}</span></td>
-                            <td><b>${ex}</b></td>
-                            <td>1: ${o1}<br>2: ${o2}</td>
-                            <td>
-                                <button class="btn-resolver" onclick="apurarEnquete('${enq.id}', '1')">${o1}</button>
-                                <button class="btn-resolver" onclick="apurarEnquete('${enq.id}', '2')" style="background:#3b82f6;">${o2}</button>
-                            </td>
-                        </tr>`;
-                    });
-                } else {
-                    tabela.innerHTML = "<tr><td colspan='4' style='color:gray; padding:10px; text-align:center;'>Nenhuma previsão ativa no momento.</td></tr>";
-                }
-            } catch(e) { console.error("Erro ao carregar dados do admin:", e); }
+            // 2. Carregar Saques
+            const { data: saques } = await supabase.from('saques').select('*').eq('status', 'PENDENTE');
+            const tSaq = document.getElementById('tabela-saques');
+            tSaq.innerHTML = saques ? saques.map(s => `
+                <tr>
+                    <td>${s.membro_id}</td>
+                    <td>${s.valor}</td>
+                    <td><button onclick="finalizarSaque('${s.id}', '${s.membro_id}', ${s.valor})">Pagar</button></td>
+                </tr>
+            `).join('') : '<tr><td>Nenhum</td></tr>';
         }
 
-        // --- FUNÇÕES DE SAQUE ATUALIZADAS ---
-        async function finalizarSaque(saqueId, novoStatus, membroId, valorEstorno) {
-            if (novoStatus === 'FINALIZADO') {
-                if(confirm("Você confirma que já fez a transferência PIX bancária para este membro?")) {
-                    await clientSupabase.from('saques').update({ status: 'FINALIZADO' }).eq('id', saqueId);
-                    alert("Saque marcado como concluído e pago!");
-                }
-            } else {
-                if(confirm("Deseja recusar o saque? O valor em moedas será devolvido imediatamente ao saldo do cliente.")) {
-                    const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', membroId).maybeSingle();
-                    let saldoAtual = m ? parseFloat(m.saldo) : 0;
-                    await clientSupabase.from('membros').update({ saldo: saldoAtual + parseFloat(valorEstorno) }).eq('id', membroId);
-                    await clientSupabase.from('saques').update({ status: 'RECUSADO_ESTORNADO' }).eq('id', saqueId);
-                    alert("Saque recusado e fundos estornados para o membro.");
-                }
-            }
+        async function aprovarRecarga(id, membroId, valor) {
+            const { data: m } = await supabase.from('membros').select('saldo').eq('id', membroId).single();
+            await supabase.from('membros').update({ saldo: parseFloat(m.saldo) + parseFloat(valor) }).eq('id', membroId);
+            await supabase.from('depositos').update({ status: 'APROVADO' }).eq('id', id);
+            alert("Aprovado!");
             carregarAdmin();
         }
 
-        // --- FUNÇÕES GERENCIAIS DE MEMBROS ---
-        async function ajustarSaldoManual(membroId, saldoAtual) {
-            const novoValor = prompt(`Alterar saldo de ${membroId}.\nSaldo atual: ${saldoAtual}\nDigite o NOVO SALDO final completo da conta:`);
-            if(!novoValor) return;
-            const valNum = parseFloat(novoValor);
-            if(isNaN(valNum)) { alert("Valor inválido"); return; }
-            await clientSupabase.from('membros').update({ saldo: valNum }).eq('id', membroId);
-            alert("Saldo atualizado manualmente!");
-            carregarAdmin();
-        }
-
-        async function alterarStatusMembro(membroId, statusAlvo) {
-            if(confirm(`Tem certeza que deseja mudar o status de ${membroId} para ${statusAlvo.toUpperCase()}?`)) {
-                await clientSupabase.from('membros').update({ status: statusAlvo }).eq('id', membroId);
-                alert(`Membro alterado para ${statusAlvo}!`);
-                carregarAdmin();
-            }
-        }
-
-        async function deletarMembroConta(membroId) {
-            if(confirm(`⚠️ AÇÃO CRÍTICA!\nTem certeza que deseja EXCLUIR DEFINITIVAMENTE a conta do usuário ${membroId}? Ele perderá acessos e históricos.`)) {
-                await clientSupabase.from('membros').delete().eq('id', membroId);
-                alert("Membro deletado do sistema.");
-                carregarAdmin();
-            }
-        }
-
-        // --- FUNÇÕES COMPLEMENTARES DE DEPOSITOS ---
-        async function aprovarRecarga(pId, mId, v) {
-            const { data: m } = await clientSupabase.from('membros').select('saldo').eq('id', mId).maybeSingle();
-            let s = m ? parseFloat(m.saldo) : 0;
-            await clientSupabase.from('membros').update({ saldo: s + v }).eq('id', mId);
-            await clientSupabase.from('depositos').update({ status: 'APROVADO' }).eq('id', pId);
-            alert("Depósito Liberado com Sucesso!"); 
-            carregarAdmin();
-        }
-        
-        async function notificarNaoRecebido(id) { 
-            await clientSupabase.from('depositos').update({ status: 'RECUSADO' }).eq('id', id); 
-            carregarAdmin(); 
-        }
-        
-        async function deletarRecarga(id) { 
-            if(confirm("Excluir pedido definitivamente do banco?")) { 
-                await clientSupabase.from('depositos').delete().eq('id', id); 
-                carregarAdmin(); 
-            } 
-        }
-        
-        // --- FORMULÁRIO DINÂMICO ---
         function ajustarFormulario() {
-            const cat = document.getElementById('enq-categoria').value; const container = document.getElementById('campos-dinamicos');
-            if (cat === "Mercado Financeiro") {
-                container.innerHTML = `
-                    <select id="enq-ativo">
-                        <option value="WIN1!">📉 Índice WIN (Ibovespa)</option>
-                        <option value="WDO1!">💵 Dólar WDO</option>
-                        <option value="BTCUSD">🪙 BITCOIN (Cripto)</option>
-                        <option value="GOLD">🏆 GOLD (Ouro)</option>
-                        <option value="EURUSD">💱 EUR/USD (Forex)</option>
-                        <option value="MXRF11">🏢 MXRF11 (FII)</option>
-                        <option value="HGLG11">🏢 HGLG11 (FII)</option>
-                        <option value="XPML11">🏢 XPML11 (FII)</option>
-                    </select>
-                    <input type="text" id="enq-fechamento" placeholder="Preço de Ontem">`;
-            } else {
-                container.innerHTML = `<input type="text" id="enq-pergunta" placeholder="Ex: Flamengo vs Vasco (Quem ganha?)"><input type="text" id="enq-op1" placeholder="Time da Casa / Opção 1"><input type="text" id="enq-op2" placeholder="Time Visitante / Opção 2">`;
-            }
+            const cat = document.getElementById('enq-categoria').value;
+            const container = document.getElementById('campos-dinamicos');
+            container.innerHTML = cat === "Mercado Financeiro" 
+                ? `<input id="enq-ativo" placeholder="Ex: WIN1!">` 
+                : `<input id="enq-pergunta" placeholder="Ex: Flamengo vs Vasco">`;
         }
 
-        async function injetarEnquete() {
-            const cat = document.getElementById('enq-categoria').value; let pf = "";
-            if (cat === "Mercado Financeiro") { pf = `${document.getElementById('enq-ativo').value} [Ref: ${document.getElementById('enq-fechamento').value} vs ACIMA vs ABAIXO]`; }
-            else { pf = `${document.getElementById('enq-pergunta').value} [${document.getElementById('enq-op1').value} vs ${document.getElementById('enq-op2').value}]`; }
-            await clientSupabase.from('enquetes').insert([{ pergunta: pf, categoria: cat, opcao_1: "1", opcao_2: "2" }]);
-            alert("Previsão injetada!"); carregarAdmin();
-        }
-
-        // --- APURAÇÃO COM LOGICA DE RATEIO DO POTE (POOL) OTIMIZADA ---
-        async function apurarEnquete(enqueteId, opcaoVencedora) {
-            if(!confirm("Tem certeza que deseja encerrar esta enquete com a opção selecionada? O cálculo do rateio será definitivo.")) return;
-
-            try {
-                const idBusca = isNaN(enqueteId) ? enqueteId : parseInt(enqueteId);
-                const { data: apostas, error: errApostas } = await clientSupabase.from('historico_apostas').select('*').eq('enquete_id', idBusca);
-
-                if (errApostas) throw errApostas;
-                
-                if (apostas && apostas.length > 0) {
-                    let poteTotal = 0;
-                    let volumeVencedores = 0;
-                    let apostasVencedoras = [];
-
-                    apostas.forEach(aposta => {
-                        const valor = parseFloat(aposta.valor_total || 0);
-                        poteTotal += valor;
-                        if (aposta.opcao_escolhida?.toString() === opcaoVencedora.toString()) {
-                            volumeVencedores += valor;
-                            apostasVencedoras.push(aposta);
-                        }
-                    });
-
-                    if (volumeVencedores > 0) {
-                        const IDsVencedores = apostasVencedoras.map(v => v.membro_id);
-                        const { data: membros, error: errMembros } = await clientSupabase.from('membros').select('id, saldo').in('id', IDsVencedores);
-
-                        if (errMembros) throw errMembros;
-
-                        const saldoMapa = {};
-                        membros.forEach(m => { saldoMapa[m.id] = parseFloat(m.saldo || 0); });
-
-                        const promessasPagamento = apostasVencedoras.map(async (vencedor) => {
-                            let suaProporcao = parseFloat(vencedor.valor_total) / volumeVencedores;
-                            let premioFinal = suaProporcao * poteTotal;
-                            
-                            let saldoAtual = saldoMapa[vencedor.membro_id];
-                            if (saldoAtual !== undefined) {
-                                let novoSaldo = saldoAtual + premioFinal;
-                                return clientSupabase.from('membros').update({ saldo: novoSaldo }).eq('id', vencedor.membro_id);
-                            }
-                        });
-
-                        await Promise.all(promessasPagamento);
-                    } else {
-                        alert("Aviso: Ninguém acertou a previsão! O valor acumulado ficou para a plataforma.");
-                    }
-                    await clientSupabase.from('historico_apostas').delete().eq('enquete_id', idBusca);
-                }
-                await clientSupabase.from('enquetes').delete().eq('id', idBusca);
-                alert("Apuração Concluída e prêmio rateado com sucesso!"); 
-                carregarAdmin();
-            } catch (error) {
-                console.error("Erro na apuração:", error);
-                alert("Ocorreu um erro ao processar a apuração.");
-            }
-        }
-
-        setInterval(carregarAdmin, 10000);
         carregarAdmin();
     </script>
 </body>
