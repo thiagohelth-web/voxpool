@@ -2,12 +2,30 @@ async function realizarLogin() {
     const usu = document.getElementById('login-usuario').value.trim();
     const sen = document.getElementById('login-senha').value.trim();
 
-    // Esta é a verificação que você pediu:
+    // Verificação do administrador
     if (usu === "adm" && sen === "adm123") {
         localStorage.setItem('vox_usuario', 'adm');
-        window.location.href = 'adm.html'; // Redireciona para o painel do ADM
+        window.location.href = 'adm.html';
         return;
     }
 
-    // ... restante da lógica de login dos membros
+    // Lógica para membros (continuação da função)
+    const { data: membro, error } = await clientSupabase
+        .from('membros')
+        .select('*')
+        .eq('id', usu)
+        .maybeSingle();
+
+    if (error || !membro) {
+        alert("Usuário não encontrado!");
+        return;
+    }
+
+    if (membro.senha !== sen) {
+        alert("Senha incorreta!");
+        return;
+    }
+
+    localStorage.setItem('vox_usuario', membro.id);
+    window.location.href = 'dashboard.html';
 }
